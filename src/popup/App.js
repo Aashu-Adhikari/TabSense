@@ -1,4 +1,4 @@
-// Main Popup Component - With Global Search
+// Main Popup Component - With Global Search (FIXED VERSION)
 import React, { useState, useEffect, useRef } from 'react';
 import './popup.css';
 
@@ -47,6 +47,7 @@ function App() {
       }, 300);
     } else {
       setSearchResults(null);
+      setSearchLoading(false);
     }
 
     return () => {
@@ -180,12 +181,14 @@ function App() {
     window.close();
   };
 
-  // Filter ungrouped tabs by search (for normal view)
-  const filteredUngroupedTabs = ungroupedTabs.filter(tab =>
-    !searchTerm.trim() ||
-    tab.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tab.url.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Helper for color emoji
+  const getColorEmoji = (color) => {
+    const emojiMap = {
+      'grey': '⚫', 'blue': '🔵', 'red': '🔴', 'yellow': '🟡',
+      'green': '🟢', 'pink': '🟣', 'purple': '🟣', 'cyan': '🔵', 'orange': '🟠'
+    };
+    return emojiMap[color] || '⚫';
+  };
 
   // Helper to get group info by ID
   const getGroupById = (groupId) => {
@@ -294,63 +297,101 @@ function App() {
     );
   };
 
-  // Helper for color emoji
-  const getColorEmoji = (color) => {
-    const emojiMap = {
-      'grey': '⚫', 'blue': '🔵', 'red': '🔴', 'yellow': '🟡',
-      'green': '🟢', 'pink': '🟣', 'purple': '🟣', 'cyan': '🔵', 'orange': '🟠'
+  // Search Results View - FIXED with null check
+  const SearchResultsView = () => {
+    // Null check first
+    if (!searchResults || searchLoading) {
+      return searchLoading ? (
+        <div className="loading-state">🔍 Searching...</div>
+      ) : null;
+    }
+
+    const { searchResults: allResults, groupedResults, ungroupedResults, searchTerm: currentSearchTerm } = searchResults;
+
+    // Helper to highlight search terms
+    const highlightText = (text) => {
+      if (!currentSearchTerm.trim()) return text;
+      
+      const parts = text.split(new RegExp(`(${currentSearchTerm})`, 'gi'));
+      return parts.map((part, index) =>
+        part.toLowerCase() === currentSearchTerm.toLowerCase() ? (
+          <span key={index} className="search-highlight">{part}</span>
+        ) : (
+          part
+        )
+      );
     };
-    return emojiMap[color] || '⚫';
-  };
 
-// Search Results View - Updated for better UI
-const SearchResultsView = () => {
-  if (!searchResults || searchLoading) return null;
+    return (
+      <div className="search-results-container">
+        <div className="search-header">
+          <h3>
+            🔍 Search Results
+            <span className="search-count">
+              {allResults.length} match{allResults.length !== 1 ? 'es' : ''}
+            </span>
+          </h3>
+          <button 
+            className="clear-search-btn"
+            onClick={() => setSearchTerm('')}
+          >
+            Clear Search
+          </button>
+        </div>
 
-  const { searchResults: allResults, groupedResults, ungroupedResults, searchTerm } = searchResults;
-
-  // Helper to highlight search terms
-  const highlightText = (text) => {
-    if (!searchTerm.trim()) return text;
-    
-    const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
-    return parts.map((part, index) =>
-      part.toLowerCase() === searchTerm.toLowerCase() ? (
-        <span key={index} className="search-highlight">{part}</span>
-      ) : (
-        part
-      )
-    );
-  };
-
-  return (
-    <div className="search-results-container">
-      <div className="search-header">
-        <h3>
-          🔍 Search Results
-          <span className="search-count">
-            {allResults.length} match{allResults.length !== 1 ? 'es' : ''}
-          </span>
-        </h3>
-        <button 
-          className="clear-search-btn"
-          onClick={() => setSearchTerm('')}
-        >
-          Clear Search
-        </button>
-      </div>
-
-      {/* Grouped Results */}
-      {groupedResults.length > 0 && (
-        <div className="search-section">
-          <div className="search-section-header">
-            <h4>📁 In Groups</h4>
-            <span className="search-section-count">{groupedResults.length}</span>
+        {/* Grouped Results */}
+        {groupedResults.length > 0 && (
+          <div className="search-section">
+            <div className="search-section-header">
+              <h4>📁 In Groups</h4>
+              <span className="search-section-count">{groupedResults.length}</span>
+            </div>
+            <div className="search-tabs-list">
+              {groupedResults.map(tab => {
+                const group = getGroupById(tab.groupId);
+                return (
+                  <div 
+                    key={tab.id} 
+                    className="search-tab-item clickable-tab"
+                    onClick={() => handleOpenTab(tab.id, tab.windowId)}
+                    title="Click to open tab"
+                  >
+                    <img 
+                      src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMHAgMSAxIDAgMCAxIDEgMXoiIGZpbGw9IiM2NjY2NjYiLz48L3N2Zz4='} 
+                      alt="Favicon" 
+                      className="search-tab-favicon" 
+                    />
+                    <div className="search-tab-info">
+                      <div className="search-tab-title">
+                        {highlightText(tab.title)}
+                      </div>
+                      <div className="search-tab-meta">
+                        {group && (
+                          <span className="search-tab-group">
+                            {group.title}
+                          </span>
+                        )}
+                        <span className="search-tab-url" title={tab.url}>
+                          {tab.url}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="search-tabs-list">
-            {groupedResults.map(tab => {
-              const group = getGroupById(tab.groupId);
-              return (
+        )}
+
+        {/* Ungrouped Results */}
+        {ungroupedResults.length > 0 && (
+          <div className="search-section">
+            <div className="search-section-header">
+              <h4>🔓 Ungrouped</h4>
+              <span className="search-section-count">{ungroupedResults.length}</span>
+            </div>
+            <div className="search-tabs-list">
+              {ungroupedResults.map(tab => (
                 <div 
                   key={tab.id} 
                   className="search-tab-item clickable-tab"
@@ -367,86 +408,44 @@ const SearchResultsView = () => {
                       {highlightText(tab.title)}
                     </div>
                     <div className="search-tab-meta">
-                      {group && (
-                        <span className="search-tab-group">
-                          {group.title}
-                        </span>
-                      )}
                       <span className="search-tab-url" title={tab.url}>
                         {tab.url}
                       </span>
                     </div>
                   </div>
+                  {groups.length > 0 && (
+                    <select 
+                      className="search-group-select"
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleAddToGroup(tab.id, parseInt(e.target.value));
+                          e.target.value = "";
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="">Add to group...</option>
+                      {groups.map(group => (
+                        <option key={group.id} value={group.id}>
+                          {group.title} ({group.tabs.length})
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Ungrouped Results */}
-      {ungroupedResults.length > 0 && (
-        <div className="search-section">
-          <div className="search-section-header">
-            <h4>🔓 Ungrouped</h4>
-            <span className="search-section-count">{ungroupedResults.length}</span>
+        {allResults.length === 0 && (
+          <div className="no-results">
+            No tabs found for "{currentSearchTerm}"
           </div>
-          <div className="search-tabs-list">
-            {ungroupedResults.map(tab => (
-              <div 
-                key={tab.id} 
-                className="search-tab-item clickable-tab"
-                onClick={() => handleOpenTab(tab.id, tab.windowId)}
-                title="Click to open tab"
-              >
-                <img 
-                  src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMHAgMSAxIDAgMCAxIDEgMXoiIGZpbGw9IiM2NjY2NjYiLz48L3N2Zz4='} 
-                  alt="Favicon" 
-                  className="search-tab-favicon" 
-                />
-                <div className="search-tab-info">
-                  <div className="search-tab-title">
-                    {highlightText(tab.title)}
-                  </div>
-                  <div className="search-tab-meta">
-                    <span className="search-tab-url" title={tab.url}>
-                      {tab.url}
-                    </span>
-                  </div>
-                </div>
-                {groups.length > 0 && (
-                  <select 
-                    className="search-group-select"
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        handleAddToGroup(tab.id, parseInt(e.target.value));
-                        e.target.value = "";
-                      }
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <option value="">Add to group...</option>
-                    {groups.map(group => (
-                      <option key={group.id} value={group.id}>
-                        {group.title} ({group.tabs.length})
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {allResults.length === 0 && (
-        <div className="no-results">
-          No tabs found for "{searchTerm}"
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
   // Normal View (when not searching)
   const NormalView = () => (
@@ -487,7 +486,7 @@ const SearchResultsView = () => {
         <h2>
           Ungrouped Tabs 
           <span className="count-badge">
-            {filteredUngroupedTabs.length}{searchTerm && ` of ${ungroupedTabs.length}`}
+            {ungroupedTabs.length}
           </span>
         </h2>
         {ungroupedTabs.length >= 2 && (
@@ -505,8 +504,8 @@ const SearchResultsView = () => {
       </div>
       
       <div className="ungrouped-tabs-list">
-        {filteredUngroupedTabs.length > 0 ? (
-          filteredUngroupedTabs.map(tab => (
+        {ungroupedTabs.length > 0 ? (
+          ungroupedTabs.map(tab => (
             <div 
               key={tab.id} 
               className="ungrouped-tab-item clickable-tab"
@@ -558,11 +557,7 @@ const SearchResultsView = () => {
           ))
         ) : (
           <div className="empty-section">
-            {searchTerm 
-              ? `No ungrouped tabs found for "${searchTerm}"`
-              : ungroupedTabs.length === 0 
-                ? "All tabs are grouped! 🎉"
-                : "No ungrouped tabs"}
+            All tabs are grouped! 🎉
           </div>
         )}
       </div>
@@ -577,59 +572,51 @@ const SearchResultsView = () => {
       </header>
 
       <main className="popup-main">
-        {/* Search Bar */}
-{/* Enhanced Search Bar */}
-<div className="search-container">
-  <div className="search-input-wrapper">
-    <div className="search-icon">🔍</div>
-    
-    <input
-      type="text"
-      placeholder="Search across all tabs..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="search-input"
-      autoComplete="off"
-      spellCheck="false"
-    />
-    
-    <div className="search-actions">
-      {searchLoading && (
-        <div className="search-loading-indicator"></div>
-      )}
-      
-      {searchTerm && (
-        <button 
-          className="clear-search-btn"
-          onClick={() => setSearchTerm('')}
-          aria-label="Clear search"
-          title="Clear search (Esc)"
-        >
-          ✕
-        </button>
-      )}
-    </div>
-  </div>
-  
-  <div className="search-hint">
-    Search by <span>title</span> or <span>URL</span> • Press <span>Esc</span> to clear
-  </div>
-  
-</div>
-
-                {searchLoading && (
-            <div className="loading-state">
-                🔍 Searching...
+        {/* Enhanced Search Bar */}
+        <div className="search-container">
+          <div className="search-input-wrapper">
+            <div className="search-icon">🔍</div>
+            
+            <input
+              type="text"
+              placeholder="Search across all tabs..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+              autoComplete="off"
+              spellCheck="false"
+            />
+            
+            <div className="search-actions">
+              {searchLoading && (
+                <div className="search-loading-indicator"></div>
+              )}
+              
+              {searchTerm && (
+                <button 
+                  className="clear-search-btn"
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Clear search"
+                  title="Clear search (Esc)"
+                >
+                  ✕
+                </button>
+              )}
             </div>
-                )}
+          </div>
+          
+          <div className="search-hint">
+            Search by <span>title</span> or <span>URL</span> • Press <span>Esc</span> to clear
+          </div>
+        </div>
 
-                {loading && !searchTerm ? (
-                <div className="loading-state">Loading groups...</div>
-            ) : searchTerm ? (
-                <SearchResultsView />
-            ) : (
-                <NormalView />
-            )}
+        {loading ? (
+          <div className="loading-state">Loading groups...</div>
+        ) : searchTerm ? (
+          <SearchResultsView />
+        ) : (
+          <NormalView />
+        )}
       </main>
 
       <footer className="popup-footer">
