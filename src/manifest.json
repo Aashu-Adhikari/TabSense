@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "TabSynth (Dev)",
+  "version": "1.0.0",
+  "description": "Tab organizer and research assistant.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TabSynth"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage"
+  ]
+}
