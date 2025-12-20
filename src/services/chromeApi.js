@@ -1,0 +1,159 @@
+// Chrome Extension API Service
+class ChromeApiService {
+  // Get all tabs
+  async getAllTabs() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "GET_ALL_TABS" }, resolve);
+    });
+  }
+
+  // Get groups with tabs
+  async getGroupsWithTabs() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "GET_GROUPS_WITH_TABS" }, resolve);
+    });
+  }
+
+  // Group tabs
+  async groupTabs(tabIds, groupName) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ 
+        action: "GROUP_TABS", 
+        tabIds, 
+        groupName 
+      }, resolve);
+    });
+  }
+
+  // Auto group tabs (legacy - now uses domain grouping)
+  async autoGroupTabs() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "AUTO_GROUP_TABS" }, resolve);
+    });
+  }
+
+  // Group by domain
+  async groupByDomain() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "GROUP_BY_DOMAIN" }, resolve);
+    });
+  }
+
+  // Group by content
+  async groupByContent() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "GROUP_BY_CONTENT" }, resolve);
+    });
+  }
+
+  // Group by AI
+  async groupByAI() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "GROUP_BY_AI" }, resolve);
+    });
+  }
+
+  // Ungroup single tab
+  async ungroupSingleTab(tabId) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ 
+        action: "UNGROUP_SINGLE_TAB", 
+        tabId 
+      }, resolve);
+    });
+  }
+
+  // Ungroup all tabs
+  async ungroupAllTabs(groupId) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ 
+        action: "UNGROUP_ALL_TABS", 
+        groupId 
+      }, resolve);
+    });
+  }
+
+  // Add tab to group
+  async addTabToGroup(tabId, groupId) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ 
+        action: "ADD_TAB_TO_GROUP", 
+        tabId, 
+        groupId 
+      }, resolve);
+    });
+  }
+
+  // Rename group
+  async renameGroup(groupId, newName) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ 
+        action: "RENAME_GROUP", 
+        groupId, 
+        newName 
+      }, resolve);
+    });
+  }
+
+  // Search all tabs
+  async searchAllTabs(searchTerm) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ 
+        action: "SEARCH_ALL_TABS", 
+        searchTerm 
+      }, resolve);
+    });
+  }
+
+  // ML Operations
+  async initializeML() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "INITIALIZE_ML" }, resolve);
+    });
+  }
+
+  async classifyTab(title, url) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ 
+        action: "CLASSIFY_TAB", 
+        title, 
+        url 
+      }, resolve);
+    });
+  }
+
+  async getSmartGroupName(tabs) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ 
+        action: "GET_SMART_GROUP_NAME", 
+        tabs 
+      }, resolve);
+    });
+  }
+
+  async trainModel(trainingData) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ 
+        action: "TRAIN_MODEL", 
+        trainingData 
+      }, resolve);
+    });
+  }
+
+  async mlAutoGroupAllTabs(options) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        action: "ML_AUTO_GROUP_ALL_TABS",
+        options
+      }, resolve);
+    });
+  }
+
+  async pingML() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "PING_ML" }, resolve);
+    });
+  }
+}
+
+export const chromeApi = new ChromeApiService();

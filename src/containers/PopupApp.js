@@ -45,10 +45,6 @@ function App() {
   const [renamingGroup, setRenamingGroup] = useState(null);
   const [newGroupName, setNewGroupName] = useState('');
 
-  // Grouping method state
-  const [groupingMethod, setGroupingMethod] = useState('domain');
-  const [isGrouping, setIsGrouping] = useState(false);
-
   // Group operations
   const toggleGroup = (groupId) => {
     const newExpanded = new Set(expandedGroups);
@@ -72,40 +68,33 @@ function App() {
     setNewGroupName('');
   };
 
-  // Handle grouping with selected method
-  const handleGroupTabs = async () => {
-    if (ungroupedTabs.length < 2) return;
+  const handleMlAutoGroupClick = async () => {
+    if (ungroupedTabs.length === 0 || !mlInitialized) return;
     
-    setIsGrouping(true);
     try {
-      const { chromeApi } = await import('../services/chromeApi');
-      
-      let response;
-      switch (groupingMethod) {
-        case 'domain':
-          response = await chromeApi.groupByDomain();
-          break;
-        case 'content':
-          response = await chromeApi.groupByContent();
-          break;
-        case 'ai':
-          response = await chromeApi.groupByAI();
-          break;
-        default:
-          response = await chromeApi.groupByDomain();
-      }
+      const response = await handleMlAutoGroup(ungroupedTabs, {
+        confidenceThreshold: 0.6,
+        minGroupSize: 2,
+        maxGroups: 10
+      });
       
       if (response && response.success) {
-        const { message } = response;
+        const { groupsCreated, totalTabsGrouped, message } = response;
         alert(`${message}\n\nCheck your browser - the groups are now created and ready to use!`);
         fetchGroupsAndTabs();
       }
     } catch (error) {
-      console.error('Grouping failed:', error);
-      alert('Tab grouping failed. Please try again.');
-    } finally {
-      setIsGrouping(false);
+      console.error('ML Auto Group failed:', error);
+      alert('AI Auto Group failed. Please try "Smart Group All" instead.');
     }
+  };
+
+  const handleSmartGroupAll = async () => {
+    if (ungroupedTabs.length < 2) return;
+    
+    const { chromeApi } = await import('../services/chromeApi');
+    await chromeApi.autoGroupTabs();
+    fetchGroupsAndTabs();
   };
 
   // Handle escape key for search
@@ -122,21 +111,6 @@ function App() {
 
   const loading = groupsLoading || mlInitializing;
   const error = groupsError || searchError || mlError;
-
-  const getGroupingMethodInfo = () => {
-    switch (groupingMethod) {
-      case 'domain':
-        return { icon: '🌐', name: 'Domain Grouping', description: 'Group by website domain' };
-      case 'content':
-        return { icon: '📋', name: 'Content Grouping', description: 'Group by content type' };
-      case 'ai':
-        return { icon: '🤖', name: 'AI Grouping', description: 'Smart ML-based grouping' };
-      default:
-        return { icon: '🌐', name: 'Domain Grouping', description: 'Group by website domain' };
-    }
-  };
-
-  const methodInfo = getGroupingMethodInfo();
 
   return (
     <div className="popup-container">
@@ -239,7 +213,7 @@ function App() {
                 ))
               ) : (
                 <div className="empty-section">
-                  No groups yet. Use the dropdown below to choose a grouping method.
+                  No groups yet. Use "Smart Group All" to create groups automatically.
                 </div>
               )}
             </div>
@@ -252,43 +226,27 @@ function App() {
                   {ungroupedTabs.length}
                 </span>
               </h2>
-            </div>
-            
-            {/* Grouping Controls */}
-            {ungroupedTabs.length >= 2 && (
-              <div className="grouping-controls">
-                <div className="grouping-method-selector">
-                  <label htmlFor="grouping-method" className="grouping-label">
-                    Grouping Method:
-                  </label>
-                  <select
-                    id="grouping-method"
-                    value={groupingMethod}
-                    onChange={(e) => setGroupingMethod(e.target.value)}
-                    className="grouping-method-select"
+              <div className="action-buttons">
+                {ungroupedTabs.length >= 2 && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleSmartGroupAll}
                   >
-                    <option value="domain">🌐 Domain Grouping</option>
-                    <option value="content">📋 Content Grouping</option>
-                    <option value="ai" disabled={!mlInitialized}>🤖 AI Grouping</option>
-                  </select>
-                  <div className="grouping-description">
-                    {methodInfo.description}
-                    {groupingMethod === 'ai' && !mlInitialized && ' (ML not initialized)'}
-                  </div>
-                </div>
-                
-                <Button
-                  variant="primary"
-                  onClick={handleGroupTabs}
-                  disabled={isGrouping || (groupingMethod === 'ai' && !mlInitialized)}
-                  loading={isGrouping}
-                  fullWidth={true}
-                  size="large"
-                >
-                  {isGrouping ? 'Grouping...' : `🚀 Group Tabs (${methodInfo.name})`}
-                </Button>
+                    ✨ Smart Group All
+                  </Button>
+                )}
+                {ungroupedTabs.length >= 2 && mlInitialized && (
+                  <Button
+                    variant="primary"
+                    className="ml-auto-group-btn"
+                    onClick={handleMlAutoGroupClick}
+                    disabled={!mlInitialized}
+                  >
+                    <span className="ml-btn-icon">🤖</span> AI Auto Group
+                  </Button>
+                )}
               </div>
-            )}
+            </div>
             
             <div className="ungrouped-tabs-list">
               {ungroupedTabs.length > 0 ? (

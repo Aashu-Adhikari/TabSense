@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/ashura/personal/TabSynth"
+      ],
+      "chrome-devtools": {
+        "command": "npx",
+        "args": [
+            "-y",
+          "chrome-devtools-mcp@latest"
+        ]
+      }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.38"
+      ]
+    }
+  }
+}
