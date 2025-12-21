@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// src/popup/App.js
+import React, { useState, useEffect } from 'react';
 import './popup.css';
 import '../styles/components/search.css';
 import '../styles/components/groups.css';
@@ -8,9 +9,9 @@ import { useMlClassification } from '../hooks/useMlClassification';
 import GroupCard from '../components/GroupCard';
 import SearchResultsView from '../components/SearchResultsView';
 import Button from '../components/common/Button';
+import { mlCategories } from '../utils/mlCategories'; // Import the shared categories
 
 function App() {
-  // Custom hooks for state management
   const {
     groups,
     ungroupedTabs,
@@ -33,23 +34,70 @@ function App() {
     clearSearch
   } = useSearch();
 
-  const {
-    mlInitialized,
-    initializing: mlInitializing,
-    error: mlError,
-    handleMlAutoGroup
-  } = useMlClassification();
+  const { mlInitialized, initializing: mlInitializing, error: mlError } = useMlClassification();
 
-  // Local state for UI
   const [expandedGroups, setExpandedGroups] = useState(new Set());
   const [renamingGroup, setRenamingGroup] = useState(null);
   const [newGroupName, setNewGroupName] = useState('');
-
-  // Grouping method state
   const [groupingMethod, setGroupingMethod] = useState('domain');
   const [isGrouping, setIsGrouping] = useState(false);
 
-  // Group operations
+  // =================================================================
+  // ===== MODIFIED HANDLER FOR DYNAMIC DROPDOWN =====================
+  // =================================================================
+  const handleAssignTabToCategory = async (tab, event) => {
+    const { value } = event.target;
+    if (!value) return;
+
+    const { chromeApi } = await import('../services/chromeApi');
+
+    // Visually reset the dropdown immediately
+    event.target.value = "";
+
+    // Case 1: The value is a prefix for a NEW ML category assignment.
+    if (value.startsWith('ml_category--')) {
+      const categoryLabel = value.replace('ml_category--', '');
+      const category = mlCategories.find(c => c.label === categoryLabel);
+
+      if (category) {
+        // Find or create a group with this category name
+        await chromeApi.findOrCreateGroupAndAddTab(tab.id, category.label, category.emoji);
+
+        // This is a precise learning signal! Train the model.
+        await chromeApi.learnFromAssignment(tab, category.label);
+
+        // Refresh the UI
+        fetchGroupsAndTabs();
+      }
+    }
+    // Case 2: The value is a number, so it's an EXISTING group ID.
+    else if (!isNaN(value)) {
+      const groupId = parseInt(value, 10);
+
+      // --- START OF FIX: "STICKY INTENT" LOGIC ---
+      // Check if the selected existing group is an AI-learnable group.
+      const group = groups.find(g => g.id === groupId);
+      if (group) {
+        // Find the matching ML category based on the group's title.
+        const matchingMlCategory = mlCategories.find(
+          cat => `${cat.emoji} ${cat.label}` === group.title
+        );
+
+        // If the group's name matches an AI category, this is also a valid training signal!
+        if (matchingMlCategory) {
+          console.log(`Learning: User added tab to existing AI group '${group.title}'.`);
+          await chromeApi.learnFromAssignment(tab, matchingMlCategory.label);
+        }
+      }
+      // --- END OF FIX ---
+
+      // This part always runs to actually move the tab.
+      handleAddToGroup(tab.id, groupId);
+    }
+  };
+
+
+  // (The rest of the component's logic and JSX are unchanged)
   const toggleGroup = (groupId) => {
     const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(groupId)) {
@@ -72,7 +120,6 @@ function App() {
     setNewGroupName('');
   };
 
-  // Handle grouping with selected method
   const handleGroupTabs = async () => {
     if (ungroupedTabs.length < 2) return;
     
@@ -89,7 +136,11 @@ function App() {
           response = await chromeApi.groupByContent();
           break;
         case 'ai':
-          response = await chromeApi.groupByAI();
+          response = await chromeApi.mlAutoGroupAllTabs({
+            confidenceThreshold: 0.6,
+            minGroupSize: 2,
+            maxGroups: 10
+          });
           break;
         default:
           response = await chromeApi.groupByDomain();
@@ -97,19 +148,20 @@ function App() {
       
       if (response && response.success) {
         const { message } = response;
-        alert(`${message}\n\nCheck your browser - the groups are now created and ready to use!`);
+        alert(message || 'Grouping successful! Check your browser to see the new groups.');
         fetchGroupsAndTabs();
+      } else {
+        throw new Error(response.error || 'Grouping failed for an unknown reason.');
       }
     } catch (error) {
       console.error('Grouping failed:', error);
-      alert('Tab grouping failed. Please try again.');
+      alert(`Tab grouping failed: ${error.message}`);
     } finally {
       setIsGrouping(false);
     }
   };
 
-  // Handle escape key for search
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && searchTerm) {
         clearSearch();
@@ -125,14 +177,10 @@ function App() {
 
   const getGroupingMethodInfo = () => {
     switch (groupingMethod) {
-      case 'domain':
-        return { icon: '🌐', name: 'Domain Grouping', description: 'Group by website domain' };
-      case 'content':
-        return { icon: '📋', name: 'Content Grouping', description: 'Group by content type' };
-      case 'ai':
-        return { icon: '🤖', name: 'AI Grouping', description: 'Smart ML-based grouping' };
-      default:
-        return { icon: '🌐', name: 'Domain Grouping', description: 'Group by website domain' };
+      case 'domain': return { icon: '🌐', name: 'Domain Grouping', description: 'Group by website domain' };
+      case 'content': return { icon: '📋', name: 'Content Grouping', description: 'Group by content type' };
+      case 'ai': return { icon: '🤖', name: 'AI Grouping', description: 'Smart ML-based grouping' };
+      default: return { icon: '🌐', name: 'Domain Grouping', description: 'Group by website domain' };
     }
   };
 
@@ -146,7 +194,6 @@ function App() {
       </header>
 
       <main className="popup-main">
-        {/* Search Bar */}
         <div className="search-container">
           <div className="search-input-wrapper">
             <div className="search-icon">🔍</div>
@@ -160,9 +207,7 @@ function App() {
               spellCheck="false"
             />
             <div className="search-actions">
-              {searchLoading && (
-                <div className="search-loading-indicator"></div>
-              )}
+              {searchLoading && <div className="search-loading-indicator"></div>}
               {searchTerm && (
                 <button 
                   className="clear-search-btn"
@@ -180,18 +225,11 @@ function App() {
           </div>
         </div>
 
-        {/* Error State */}
-        {error && (
-          <div className="error-state">
-            Error: {error}
-          </div>
-        )}
+        {error && <div className="error-state">Error: {error}</div>}
 
-        {/* Loading State */}
         {loading ? (
           <div className="loading-state">Loading groups...</div>
         ) : searchTerm ? (
-          /* Search Results */
           <SearchResultsView
             searchResults={searchResults}
             searchLoading={searchLoading}
@@ -202,22 +240,17 @@ function App() {
             onOpenTab={handleOpenTab}
           />
         ) : (
-          /* Normal View */
           <>
-            {/* Tab Groups Section */}
             <div className="section-header">
               <h2>Tab Groups ({groups.length})</h2>
               {groups.length > 0 && (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    if (expandedGroups.size === groups.length) {
-                      setExpandedGroups(new Set());
-                    } else {
-                      setExpandedGroups(new Set(groups.map(g => g.id)));
-                    }
-                  }}
-                >
+                <Button variant="secondary" onClick={() => {
+                  if (expandedGroups.size === groups.length) {
+                    setExpandedGroups(new Set());
+                  } else {
+                    setExpandedGroups(new Set(groups.map(g => g.id)));
+                  }
+                }}>
                   {expandedGroups.size === groups.length ? 'Collapse All' : 'Expand All'}
                 </Button>
               )}
@@ -238,29 +271,18 @@ function App() {
                   />
                 ))
               ) : (
-                <div className="empty-section">
-                  No groups yet. Use the dropdown below to choose a grouping method.
-                </div>
+                <div className="empty-section">No groups yet. Use the dropdown below to choose a grouping method.</div>
               )}
             </div>
 
-            {/* Ungrouped Tabs Section */}
             <div className="section-header">
-              <h2>
-                Ungrouped Tabs 
-                <span className="count-badge">
-                  {ungroupedTabs.length}
-                </span>
-              </h2>
+              <h2>Ungrouped Tabs <span className="count-badge">{ungroupedTabs.length}</span></h2>
             </div>
             
-            {/* Grouping Controls */}
             {ungroupedTabs.length >= 2 && (
               <div className="grouping-controls">
                 <div className="grouping-method-selector">
-                  <label htmlFor="grouping-method" className="grouping-label">
-                    Grouping Method:
-                  </label>
+                  <label htmlFor="grouping-method" className="grouping-label">Grouping Method:</label>
                   <select
                     id="grouping-method"
                     value={groupingMethod}
@@ -304,48 +326,47 @@ function App() {
                     title="Click to open tab"
                   >
                     <img 
-                      src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMHAgMSAxIDAgMCAxIDEgMXoiIGZpbGw9IiM2NjY2NjYiLz48L3N2Zz4='} 
+                      src={tab.favIconUrl || 'data:image/svg+xml;base64,...'} 
                       alt="Favicon" 
                       className="tab-favicon" 
                     />
                     <div className="ungrouped-tab-info">
-                      <div className="ungrouped-tab-title" title={tab.title}>
-                        {tab.title}
-                      </div>
-                      <div className="ungrouped-tab-url" title={tab.url}>
-                        {tab.url}
-                      </div>
+                      <div className="ungrouped-tab-title" title={tab.title}>{tab.title}</div>
+                      <div className="ungrouped-tab-url" title={tab.url}>{tab.url}</div>
                     </div>
                     
                     <div className="ungrouped-tab-actions">
-                      <span className="tab-window">Win {tab.windowId}</span>
-                      
-                      {groups.length > 0 && (
-                        <select 
-                          className="group-select"
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              handleAddToGroup(tab.id, parseInt(e.target.value));
-                              e.target.value = "";
-                            }
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <option value="">➕ Add to...</option>
-                          {groups.map(group => (
-                            <option key={group.id} value={group.id}>
-                              {group.title} ({group.tabs.length})
+                      <select 
+                        className="group-select"
+                        onChange={(e) => handleAssignTabToCategory(tab, e)}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Assign tab to a group"
+                      >
+                        <option value="">➕ Add to...</option>
+                        
+                        {groups.length > 0 && (
+                          <optgroup label="Existing Groups">
+                            {groups.map(group => (
+                              <option key={group.id} value={group.id}>
+                                {group.title} ({group.tabs.length})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        
+                        <optgroup label="AI Categories">
+                          {mlCategories.map(category => (
+                            <option key={category.label} value={`ml_category--${category.label}`}>
+                              {category.emoji} {category.label}
                             </option>
                           ))}
-                        </select>
-                      )}
+                        </optgroup>
+                      </select>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="empty-section">
-                  All tabs are grouped! 🎉
-                </div>
+                <div className="empty-section">All tabs are grouped! 🎉</div>
               )}
             </div>
           </>
@@ -353,12 +374,7 @@ function App() {
       </main>
 
       <footer className="popup-footer">
-        <Button 
-          variant="secondary"
-          onClick={fetchGroupsAndTabs}
-        >
-          🔄 Refresh
-        </Button>
+        <Button variant="secondary" onClick={fetchGroupsAndTabs}>🔄 Refresh</Button>
       </footer>
     </div>
   );

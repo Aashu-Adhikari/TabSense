@@ -2,11 +2,11 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
-module.exports = (env, argv) => { // ← CHANGE 1: Export a function
-  const isDevelopment = argv.mode === 'development'; // ← CHANGE 2: Detect mode
-  
-  return { // ← Return the config object
-    mode: argv.mode || 'production', // ← Use the mode from CLI args
+module.exports = (env, argv) => {
+  const isDevelopment = argv.mode === 'development';
+
+  return {
+    mode: argv.mode || 'production',
     entry: {
       popup: './src/popup/index.js',
       background: './src/background/background.js',
@@ -17,7 +17,6 @@ module.exports = (env, argv) => { // ← CHANGE 1: Export a function
       filename: '[name].js',
       clean: true,
     },
-    // ← CHANGE 3: Add safe devtool setting
     devtool: isDevelopment ? 'cheap-module-source-map' : false,
     module: {
       rules: [
@@ -50,9 +49,10 @@ module.exports = (env, argv) => { // ← CHANGE 1: Export a function
       new CopyWebpackPlugin({
         patterns: [
           { from: "src/manifest.json", to: "manifest.json" },
+          // MODIFICATION: This new rule copies your trained model into the build folder
+          { from: "src/ml/pretrained-model", to: "ml/pretrained-model" }
         ]
       })
     ],
-    // ← CHANGE 4: Remove devServer block for Chrome extension development
   };
 };

@@ -14,5 +14,16 @@
     "tabs",
     "tabGroups",
     "storage"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "ml/pretrained-model/model.json",
+        "ml/pretrained-model/group1-shard1of1.bin"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
   ]
 }

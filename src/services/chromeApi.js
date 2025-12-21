@@ -105,6 +105,26 @@ class ChromeApiService {
     });
   }
 
+    async findOrCreateGroupAndAddTab(tabId, categoryName, categoryEmoji) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        action: "FIND_OR_CREATE_GROUP_AND_ADD_TAB",
+        tabId,
+        categoryName,
+        categoryEmoji
+      }, resolve);
+    });
+  }
+
+  async learnFromAssignment(tab, correctLabel) {
+    // This is a "fire and forget" message, no response needed.
+    chrome.runtime.sendMessage({
+      action: "LEARN_FROM_ASSIGNMENT",
+      tab,
+      correctLabel
+    });
+  }
+
   // ML Operations
   async initializeML() {
     return new Promise((resolve) => {

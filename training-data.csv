@@ -1,0 +1,509 @@
+text,label
+"GitHub - tensorflow/tfjs: A WebGL accelerated JavaScript library for training and deploying ML models.",Code & Development
+"React – A JavaScript library for building user interfaces",Code & Development
+"Stack Overflow - Where Developers Learn, Share, & Build Careers",Code & Development
+"Node.js event loop",Code & Development
+"Visual Studio Code - Code Editing. Redefined",Code & Development
+"GitLab | The One DevOps Platform",Code & Development
+"Bitbucket | Git solution for teams",Code & Development
+"How to fix 'TypeError: cannot read property 'map' of undefined' in React",Code & Development
+"npm: 'react-router-dom'",Code & Development
+"Vercel: Develop. Preview. Ship.",Code & Development
+"Netlify: Develop and deploy websites and apps",Code & Development
+"Heroku | Cloud Application Platform",Code & Development
+"Docker Hub Container Image Library | App Containerization",Code & Development
+"Kubernetes",Code & Development
+"Fixing a merge conflict in Git - GitHub Docs",Code & Development
+"[WIP] Add new feature by user-name · Pull Request #567 · my-repo/my-project",Code & Development
+"Issues · facebook/react",Code & Development
+"Build failed: a-project-name - Vercel",Code & Development
+"PostgreSQL: The world's most advanced open source database",Code & Development
+"MongoDB Atlas",Code & Development
+"Redis",Code & Development
+"GraphQL | A query language for your API.",Code & Development
+"Apollo GraphQL | Supergraph",Code & Development
+"DigitalOcean - The developer cloud",Code & Development
+"How to use async/await with loops",Code & Development
+"CSS-Tricks",Code & Development
+"A Complete Guide to Flexbox | CSS-Tricks",Code & Development
+"CodePen Home",Code & Development
+"What is a REST API?",Code & Development
+"CI/CD pipeline status for 'main' branch",Code & Development
+"JetBrains: Essential tools for software developers and teams",Code & Development
+"Sublime Text - Text Editing, Done Right",Code & Development
+"How to center a div",Code & Development
+"Google Fonts",Code & Development
+"MDN Web Docs",Documentation
+"Getting started with TensorFlow.js | Tutorial",Documentation
+"React Hooks API Reference",Documentation
+"Stripe API Reference",Documentation
+"AWS Documentation",Documentation
+"Google Cloud Documentation",Documentation
+"Express.js - Node.js web application framework",Documentation
+"Redux Fundamentals, Part 1: Redux Overview",Documentation
+"Webpack | Concepts",Documentation
+"SvelteKit • Docs",Documentation
+"Vue.js - The Progressive JavaScript Framework",Documentation
+"Angular",Documentation
+"Rust Programming Language Documentation",Documentation
+"Python 3.10.4 documentation",Documentation
+"Go Programming Language Docs",Documentation
+"Stripe Docs | Payment Links",Documentation
+"Twilio API for Programmable Messaging - Docs",Documentation
+"Introduction to WebSockets",Documentation
+"Using the Fetch API - Web APIs | MDN",Documentation
+"TypeScript: JavaScript With Syntax For Types.",Documentation
+"Next.js by Vercel - The React Framework",Documentation
+"Tailwind CSS - Rapidly build modern websites without ever leaving your HTML.",Documentation
+"Bootstrap · The most popular HTML, CSS, and JS library in the world.",Documentation
+"jQuery API Documentation",Documentation
+"Babel · The compiler for next generation JavaScript",Documentation
+"Introduction - SvelteKit",Documentation
+"Twitter",Social Media
+"Log in to Facebook",Social Media
+"Instagram",Social Media
+"LinkedIn: Log In or Sign Up",Social Media
+"Reddit - Dive into anything",Social Media
+"Pinterest",Social Media
+"TikTok - Make Your Day",Social Media
+"Behance",Social Media
+"Dribbble - Discover the World’s Top Designers & Creative Professionals",Social Media
+"My Profile | John Doe | LinkedIn",Social Media
+"(1) Home / X",Social Media
+"r/programming on Reddit",Social Media
+"John Doe (@johndoe) • Instagram photos and videos",Social Media
+"Notifications | Facebook",Social Media
+"My Awesome Pins | Pinterest",Social Media
+"Messages | LinkedIn",Social Media
+"Quora - A place to share knowledge and better understand the world",Social Media
+"Amazon.com: Online Shopping for Electronics, Apparel, Computers, Books, DVDs & more",Shopping
+"eBay: Electronics, Cars, Fashion, Collectibles & More",Shopping
+"Walmart.com | Save Money. Live Better",Shopping
+"Target : Expect More. Pay Less.",Shopping
+"Best Buy | Official Online Store",Shopping
+"The Home Depot",Shopping
+"Etsy - Shop for handmade, vintage, and unique gifts",Shopping
+"Newegg.com - Computer Parts, Laptops, Electronics",Shopping
+"AliExpress | Online Shopping for Popular Electronics, Fashion, Home & Garden",Shopping
+"Your Shopping Cart - 3 items",Shopping
+"Checkout | My Awesome Store",Shopping
+"Track Your Order #123-456789",Shopping
+"Sony WH-1000XM4 Wireless Headphones",Shopping
+"Men's T-Shirts | A Cool Brand",Shopping
+"Deals of the Day",Shopping
+"Sign In - Amazon",Shopping
+"My Wishlist (23 items)",Shopping
+"Write a product review",Shopping
+"Shopify — Ecommerce for everyone",Shopping
+"The New York Times - Breaking News, US News, World News and Videos",News & Articles
+"CNN - Breaking News, Latest News and Videos",News & Articles
+"Hacker News",News & Articles
+"BBC News - Home",News & Articles
+"The Guardian",News & Articles
+"TechCrunch – Startup and Technology News",News & Articles
+"Medium – Where good ideas find you.",News & Articles
+"Forbes - Business News & Financial News",News & Articles
+"The Verge",News & Articles
+"Reuters: World News, Business News, Financial News",News & Articles
+"Associated Press News",News & Articles
+"Bloomberg - Business & Financial News",News & Articles
+"A blog post about an interesting topic | by Author Name",News & Articles
+"My Substack Newsletter",News & Articles
+"Live Updates: Market Trends",News & Articles
+"An article about climate change",News & Articles
+"Politics | The Washington Post",News & Articles
+"Dev.to - a community of software developers",News & Articles
+"YouTube",Video & Entertainment
+"Netflix - Watch TV Shows Online, Watch Movies Online",Video & Entertainment
+"Twitch",Video & Entertainment
+"Hulu | Watch TV and Movies Online",Video & Entertainment
+"Disney+ | Stream the best of Disney, Pixar, Marvel, Star Wars, National Geographic",Video & Entertainment
+"Vimeo | The world's leading professional video platform",Video & Entertainment
+"Spotify - Web Player: Music for everyone",Video & Entertainment
+"Apple Music",Video & Entertainment
+"SoundCloud - Listen to free music and podcasts on SoundCloud",Video & Entertainment
+"username is live on Twitch!",Video & Entertainment
+"Watch Movie Title | Netflix",Video & Entertainment
+"My Awesome Playlist | Spotify",Video & Entertainment
+"Movie Trailer (Official)",Video & Entertainment
+"Funny Cat Videos Compilation - YouTube",Video & Entertainment
+"How to Learn React - Video Tutorial",Video & Entertainment
+"Google Drive",Productivity & Tools
+"Notion – One workspace. Every team.",Productivity & Tools
+"Figma: the collaborative interface design tool.",Productivity & Tools
+"Trello",Productivity & Tools
+"Asana • The new way to work",Productivity & Tools
+"Dropbox",Productivity & Tools
+"Google Calendar",Productivity & Tools
+"Zoom Video Conferencing, Web Conferencing, Webinars, Screen Sharing",Productivity & Tools
+"Jira | Issue & Project Tracking Software",Productivity & Tools
+"Miro | The Visual Collaboration Platform for Every Team",Productivity & Tools
+"Google Sheets - online spreadsheet editor",Productivity & Tools
+"Google Docs - online document editor",Productivity & Tools
+"Q4 Marketing Plan - Google Slides",Productivity & Tools
+"My Project Board | Trello",Productivity & Tools
+"Untitled Design | Figma",Productivity & Tools
+"Dashboard - Google Analytics",Productivity & Tools
+"Settings | My Account",Productivity & Tools
+"Airtable | Create apps that perfectly fit your team's needs.",Productivity & Tools
+"Evernote - Note Taking App",Productivity & Tools
+"Canva: Visual Suite for Everyone",Productivity & Tools
+"Gmail",Email & Communication
+"Slack is your productivity platform",Email & Communication
+"Outlook – free personal email and calendar from Microsoft",Email & Communication
+"WhatsApp",Email & Communication
+"Discord | Your Place to Talk and Hang Out",Email & Communication
+"Microsoft Teams",Email & Communication
+"Inbox (1,234) - user@gmail.com",Email & Communication
+"#general | My Workspace | Slack",Email & Communication
+"Start a new meeting | Zoom",Email & Communication
+"Compose Mail",Email & Communication
+"Sent Mail | Outlook",Email & Communication
+"Google Meet",Email & Communication
+"OpenAI",AI & Machine Learning
+"Hugging Face – The AI community building the future.",AI & Machine Learning
+"Google AI",AI & Machine Learning
+"ChatGPT",AI & Machine Learning
+"Midjourney",AI & Machine Learning
+"TensorFlow",AI & Machine Learning
+"PyTorch",AI & Machine Learning
+"Stable Diffusion Online",AI & Machine Learning
+"Claude.ai",AI & Machine Learning
+"Papers with Code",AI & Machine Learning
+"Kaggle: Your Machine Learning and Data Science Community",AI & Machine Learning
+"Introduction to Large Language Models",AI & Machine Learning
+"How does GPT-4 work?",AI & Machine Learning
+"A new model for text-to-image generation",AI & Machine Learning
+"DeepMind",AI & Machine Learning
+"How to Bake the Perfect Loaf of Bread",General Browsing
+"10 Best Places to Visit in Italy",General Browsing
+"Weather Forecast",General Browsing
+"Allrecipes | Food, friends, and recipe inspiration",General Browsing
+"IMDb: Ratings, Reviews, and Where to Watch the Best Movies & TV Shows",General Browsing
+"Wikipedia, the free encyclopedia",General Browsing
+"Local restaurant menu",General Browsing
+"How to tie a tie",General Browsing
+"New York City - Wikipedia",General Browsing
+"Google Maps",General Browsing
+"Best Lasagna Recipe",General Browsing
+"Yelp | Restaurants, Dentists, Bars, Beauty Salons",General Browsing
+"Tripadvisor: Over a billion reviews & contributions for hotels, restaurants, and things to do",General Browsing
+"My Local Library",General Browsing
+"Online Banking | Bank of America",General Browsing
+"WebMD - Better information. Better health.",General Browsing
+"Zillow: Real Estate, Apartments, Mortgages & Home Values",General Browsing
+"Duolingo - The world's best way to learn a language",General Browsing
+"Coursera | Degrees, Certificates, & Free Online Courses",General Browsing
+"edX | Free Online Courses by Harvard, MIT, & more",General Browsing
+"Stanford University",General Browsing
+"IRS.gov Home",General Browsing
+"Login - My University Portal",General Browsing
+"How to fix a leaky faucet - DIY Network",General Browsing
+"Best headphones 2024",General Browsing
+"City of New York Official Website",General Browsing
+"Kayaking near me",General Browsing
+"Python (programming language) - Wikipedia",Documentation
+"JavaScript - Wikipedia",Documentation
+"Sign in to your Google Account",Productivity & Tools
+"What is DevOps?",Code & Development
+"Agile software development - Wikipedia",Code & Development
+"Scrum (software development) - Wikipedia",Code & Development
+"Login to your account",General Browsing
+"404 Not Found",General Browsing
+"500 Internal Server Error",Code & Development
+"Search results for 'best laptop'",Shopping
+"Samsung Galaxy S23 Ultra | Samsung US",Shopping
+"Apple iPhone 15 Pro",Shopping
+"Fashion trends for fall 2024",Shopping
+"Premier League table",Video & Entertainment
+"NBA Scores and Schedules",Video & Entertainment
+"Rotten Tomatoes: Movies | TV Shows | Movie Trailers",Video & Entertainment
+"Game of Thrones | HBO",Video & Entertainment
+"The Office - Watch on Peacock",Video & Entertainment
+"Minecraft Official Site",Video & Entertainment
+"League of Legends",Video & Entertainment
+"Steam, The Ultimate Online Game Platform",Video & Entertainment
+"Khan Academy | Free Online Courses, Lessons & Practice",General Browsing
+"TED: Ideas worth spreading",General Browsing
+"National Geographic",General Browsing
+"History of World War II",General Browsing
+"How airplanes fly",General Browsing
+"The official site of the NBA for the latest NBA Scores, Stats & News.",Video & Entertainment
+"NFL.com - Official Site of the National Football League",Video & Entertainment
+"ESPN: Serving sports fans. Anytime. Anywhere.",Video & Entertainment
+"Bleacher Report | Sports. Highlights. News. Now.",News & Articles
+"GitHub Actions Documentation",Documentation
+"Docker Docs: How to build, share, and run applications",Documentation
+"Kubernetes Documentation",Documentation
+"Terraform by HashiCorp",Code & Development
+"Ansible is Simple IT Automation",Code & Development
+"Chef - Automate",Code & Development
+"Puppet: Infrastructure Automation and Delivery",Code & Development
+"Jenkins",Code & Development
+"CircleCI: Continuous Integration and Delivery",Code & Development
+"Travis CI - Test and Deploy with Confidence",Code & Development
+"Datadog - Cloud Monitoring as a Service",Code & Development
+"New Relic | Application Performance Monitoring",Code & Development
+"Sentry - Application Monitoring and Error Tracking Software",Code & Development
+"LaunchDarkly | Feature Management Platform",Code & Development
+"Auth0: Secure access for everyone. But not just anyone.",Code & Development
+"Okta | The World's #1 Identity Platform",Code & Development
+"Firebase",Code & Development
+"Supabase | The Open Source Firebase Alternative",Code & Development
+"Postman API Platform",Code & Development
+"Swagger: The World's Most Popular API Framework",Documentation
+"OpenAPI Specification",Documentation
+"JSON Schema",Documentation
+"W3Schools Online Web Tutorials",Documentation
+"freeCodeCamp.org",Documentation
+"Codecademy: Learn to Code",Documentation
+"Pluralsight | The tech workforce development company",Documentation
+"Udemy | Online Courses",General Browsing
+"Lynda.com is now LinkedIn Learning",General Browsing
+"MasterClass | Learn from the best.",General Browsing
+"Skillshare | Online Classes",General Browsing
+"Facebook Messenger",Email & Communication
+"Telegram Messenger",Email & Communication
+"Signal >> Home",Email & Communication
+"Your connection is not private",General Browsing
+"This site can’t be reached",General Browsing
+"Welcome to NGINX!",Code & Development
+"Apache HTTP Server Project",Code & Development
+"Welcome to Ubuntu!",Code & Development
+"Debian -- The Universal Operating System",Code & Development
+"Arch Linux",Code & Development
+"Fedora Project",Code & Development
+"Raspberry Pi",Code & Development
+"Arduino Home",Code & Development
+"About Us | Company Name",General Browsing
+"Contact Us | A Service",General Browsing
+"Privacy Policy",General Browsing
+"Terms of Service",General Browsing
+"Careers at Awesome Inc.",General Browsing
+"Investor Relations",News & Articles
+"Press Releases",News & Articles
+"The Official Pokémon Website",Video & Entertainment
+"LEGO.com",Shopping
+"IKEA.com – International homepage",Shopping
+"Costco Wholesale",Shopping
+"Macy's - Shop Fashion Clothing & Accessories",Shopping
+"Nordstrom Online & In Store",Shopping
+"Sephora - Makeup, Skincare, Fragrance",Shopping
+"Ulta Beauty | Makeup, Skincare, & More",Shopping
+"Lowe's Home Improvement",Shopping
+"Wayfair | Shop All Things Home",Shopping
+"Craigslist",Shopping
+"Facebook Marketplace",Shopping
+"How to grow tomatoes",General Browsing
+"Learn Spanish in 10 minutes",General Browsing
+"Dog training basics",General Browsing
+"Guitar chords for beginners",General Browsing
+"How to meditate",General Browsing
+"The benefits of exercise",General Browsing
+"Healthy breakfast ideas",General Browsing
+"World Atlas",General Browsing
+"Google Translate",Productivity & Tools
+"Grammarly: Free Online Writing Assistant",Productivity & Tools
+"Online GUID Generator",Productivity & Tools
+"JSON Formatter & Validator",Productivity & Tools
+"RegExr: Learn, Build, & Test RegEx",Productivity & Tools
+"Crontab.guru - The cron schedule expression editor",Productivity & Tools
+"Can I use... Support tables for HTML5, CSS3, etc",Documentation
+"StackBlitz | Instant Dev Environments",Code & Development
+"CodeSandbox: Online Code Editor and IDE for Rapid Web Development",Code & Development
+"JSFiddle - Code Playground",Code & Development
+"Pastebin.com",Productivity & Tools
+"Gist - GitHub",Code & Development
+"Atlassian",Productivity & Tools
+"ClickUp | One app to replace them all",Productivity & Tools
+"Monday.com | A new way of working",Productivity & Tools
+"Smartsheet | Work Management",Productivity & Tools
+"Wrike | Work Management Software",Productivity & Tools
+"Basecamp: Project Management & Team Communication Software",Productivity & Tools
+"Microsoft Planner",Productivity & Tools
+"Google Keep",Productivity & Tools
+"Apple iCloud",Productivity & Tools
+"OneDrive",Productivity & Tools
+"Box | Secure Content Management, Workflow, and Collaboration",Productivity & Tools
+"WeTransfer",Productivity & Tools
+"Smallpdf.com - A Free Solution to all your PDF Problems",Productivity & Tools
+"Adobe: Creative, marketing and document management solutions",Productivity & Tools
+"Photoshop",Productivity & Tools
+"Illustrator",Productivity & Tools
+"Adobe Premiere Pro",Productivity & Tools
+"After Effects",Productivity & Tools
+"Sketch - The digital design toolkit",Productivity & Tools
+"InVision | Digital Product Design & Development",Productivity & Tools
+"Zeplin",Productivity & Tools
+"Abstract: Design collaboration without the chaos",Productivity & Tools
+"Webflow: Create a custom website | No-code website builder",Code & Development
+"Squarespace: Build a Website",Code & Development
+"Wix.com | Free Website Builder",Code & Development
+"GoDaddy: Domain Names, Websites, Hosting & Online Marketing Tools",Code & Development
+"Namecheap: Domain Names, SSL, Hosting",Code & Development
+"Cloudflare - The Web Performance & Security Company",Code & Development
+"Fastly | The Edge Cloud Platform",Code & Development
+"Akamai | The Cloud Company",Code & Development
+"AWS Cloud Computing Services",Code & Development
+"Microsoft Azure: Cloud Computing Services",Code & Development
+"Google Cloud: Cloud Computing Services",Code & Development
+"IBM Cloud",Code & Development
+"Oracle Cloud Infrastructure",Code & Development
+"Alibaba Cloud",Code & Development
+"VMware - Cloud Computing and Virtualization",Code & Development
+"Salesforce: We Bring Companies and Customers Together",Productivity & Tools
+"HubSpot | Inbound Marketing, Sales, and Service Software",Productivity & Tools
+"Zendesk | Customer Service Software & Sales CRM",Productivity & Tools
+"Intercom | The Customer Communications Platform",Productivity & Tools
+"Mailchimp: Marketing, Automation & Email Platform",Productivity & Tools
+"Constant Contact: Email Marketing Software",Productivity & Tools
+"SurveyMonkey: The World’s Most Popular Free Online Survey Tool",Productivity & Tools
+"Typeform: People-Friendly Forms and Surveys",Productivity & Tools
+"Google Forms: Free Online Form Creator",Productivity & Tools
+"Eventbrite - Discover Great Events or Create Your Own",General Browsing
+"Meetup - We are what we do",General Browsing
+"Ticketmaster: Buy Verified Tickets for Concerts, Sports, and Events",Shopping
+"Live Nation - Music Tickets, Concerts, and Tours",Shopping
+"StubHub: Buy and Sell Tickets",Shopping
+"Airbnb: Vacation Rentals, Cabins, Beach Houses, Unique Homes & Experiences",General Browsing
+"Booking.com | Official site | The best hotels & accommodations",General Browsing
+"Expedia Travel: Vacation Homes, Hotels, Car Rentals, Flights & More",General Browsing
+"Hotels.com - Deals & Discounts for Hotel Reservations",General Browsing
+"KAYAK: Search Flights, Hotels & Rental Cars",General Browsing
+"Google Flights",General Browsing
+"Southwest Airlines",General Browsing
+"United Airlines",General Browsing
+"Delta Air Lines",General Browsing
+"American Airlines",General Browsing
+"Uber",General Browsing
+"Lyft",General Browsing
+"DoorDash - Food Delivery",Shopping
+"Grubhub: Food Delivery",Shopping
+"Postmates: Food Delivery, Groceries, More",Shopping
+"Instacart: Grocery Delivery or Pickup",Shopping
+"OpenTable: Restaurant Reservations",General Browsing
+"Resy | Right This Way.",General Browsing
+"Chase Bank | Login",General Browsing
+"Wells Fargo Bank | Login",General Browsing
+"Citibank | Login",General Browsing
+"PayPal: Send Money, Pay Online, or Set Up a Merchant Account",General Browsing
+"Venmo",General Browsing
+"Zelle | A fast, safe and easy way to send and receive money",General Browsing
+"Coinbase: Buy Bitcoin & Ether",General Browsing
+"Binance: Bitcoin Exchange",General Browsing
+"Robinhood - Commission-free Stock Trading & Investing App",General Browsing
+"Fidelity Investments - Retirement Plans, Trading, Brokerage",General Browsing
+"Vanguard - Mutual Funds, IRAs, ETFs, 401(k) Plans",General Browsing
+"Charles Schwab | A modern approach to investing & retirement",General Browsing
+"The Motley Fool: Stock Market News and Analysis",News & Articles
+"MarketWatch: Stock Market News - Financial News",News & Articles
+"The Wall Street Journal - Breaking News, Business, Financial & Economic News, World News and Video",News & Articles
+"Financial Times",News & Articles
+"The Economist - World News, Politics, Economics, Business & Finance",News & Articles
+"Barron's",News & Articles
+"CNBC: Stock Markets, Business News, Financials, Earnings",News & Articles
+"Investopedia: Sharper Insight. Smarter Investing.",News & Articles
+"NerdWallet: Make all the right money moves",General Browsing
+"Credit Karma: Free Credit Scores, Reports & Monitoring",General Browsing
+"Mint: Budget Tracker & Planner",Productivity & Tools
+"YNAB | You Need A Budget",Productivity & Tools
+"TurboTax® Official Site: File Taxes Online, Tax Filing Made Easy",General Browsing
+"H&R Block® | File Taxes Online",General Browsing
+"The White House",General Browsing
+"USA.gov: The Official U.S. Government Website",General Browsing
+"CDC - Centers for Disease Control and Prevention",General Browsing
+"NIH: National Institutes of Health",General Browsing
+"NASA",General Browsing
+"The Metropolitan Museum of Art",General Browsing
+"MoMA | The Museum of Modern Art",General Browsing
+"Louvre Museum Official Website",General Browsing
+"Google Arts & Culture",General Browsing
+"The New Yorker",News & Articles
+"The Atlantic",News & Articles
+"Scientific American",News & Articles
+"Nature",News & Articles
+"Science",News & Articles
+"National Geographic",News & Articles
+"Smithsonian Magazine",News & Articles
+"Psychology Today: Health, Help, Happiness + Find a Therapist",News & Articles
+"Webtoon: Comics",Video & Entertainment
+"Crunchyroll - Watch popular anime & read manga online",Video & Entertainment
+"Funimation - Watch Anime Online",Video & Entertainment
+"Goodreads | Meet your next favorite book",General Browsing
+"Audible | Audiobooks & Original Audio Shows",Shopping
+"The Internet Archive: A digital library of Internet sites and other cultural artifacts",Documentation
+"Wayback Machine",Documentation
+"Project Gutenberg",Documentation
+"Librivox",Documentation
+"Archive of Our Own",General Browsing
+"FanFiction.Net",General Browsing
+"DeviantArt - The largest online art gallery and community",Social Media
+"ArtStation",Social Media
+"500px",Social Media
+"Flickr",Social Media
+"Imgur: The magic of the Internet",Social Media
+"GIPHY - Be Animated",Social Media
+"Tenor: GIF Keyboard",Social Dedia
+"Bandcamp",Video & Entertainment
+"Last.fm | The world's largest online music catalogue",Video & Entertainment
+"Genius | Song Lyrics & Knowledge",Video & Entertainment
+"Songkick – Concerts, Tour Dates and Festivals",Video & Entertainment
+"Bandsintown | Live Music, Concert Tickets, Tour Dates, News",Video & Entertainment
+"Resident Advisor",Video & Entertainment
+"Pitchfork",News & Articles
+"Rolling Stone: Music, Film, TV and Political News Coverage",News & Articles
+"Billboard – Music Charts, News, Photos & Video",News & Articles
+"Vulture: Entertainment News",News & Articles
+"Deadline: Hollywood Entertainment Breaking News",News & Articles
+"Variety: Film, TV, Music, Theater News",News & Articles
+"The Hollywood Reporter",News & Articles
+"Entertainment Weekly",News & Articles
+"Polygon: Gaming news, reviews, and culture",News & Articles
+"IGN: Video Games, Reviews, News, and More",News & Articles
+"Kotaku: The Gamer's Guide",News & Articles
+"GameSpot: Video Game Reviews, News, and More",News & Articles
+"Rock Paper Shotgun - PC gaming news, reviews, and more",News & Articles
+"Destructoid: Video game news, reviews, and more",News & Articles
+"Eurogamer.net",News & Articles
+"GamesRadar+",News & Articles
+"PC Gamer: PC gaming news, reviews, and more",News & Articles
+"Game Informer",News & Articles
+"Metacritic: Movie, TV, Music, and Game Reviews",General Browsing
+"BoardGameGeek",General Browsing
+"The Official SAT Suite of Assessments – The College Board",General Browsing
+"ACT – Solutions for College and Career Readiness",General Browsing
+"FAFSA - Free Application for Federal Student Aid",General Browsing
+"The Common App",General Browsing
+"U.S. News & World Report: News, Rankings and Analysis",News & Articles
+"NPR: National Public Radio",News & Articles
+"PBS: Public Broadcasting Service",Video & Entertainment
+"The Onion - America's Finest News Source",News & Articles
+"McSweeney's Internet Tendency",News & Articles
+"Reductress",News & Articles
+"ClickHole",News & Articles
+"Snopes.com",General Browsing
+"FactCheck.org",General Browsing
+"PolitiFact | The Poynter Institute",General Browsing
+"ProPublica: Journalism in the Public Interest",News & Articles
+"The Marshall Project",News & Articles
+"The Intercept",News & Articles
+"FiveThirtyEight: Politics, Polling, Sports",News & Articles
+"RealClearPolitics - Opinion, News, Analysis, Video and Polls",News & Articles
+"C-SPAN.org",News & Articles
+"The United Nations",General Browsing
+"The World Bank",General Browsing
+"The International Monetary Fund",General Browsing
+"The World Health Organization",General Browsing
+"UNICEF",General Browsing
+"Doctors Without Borders",General Browsing
+"The Red Cross",General Browsing
+"Amnesty International",General Browsing
+"Human Rights Watch",General Browsing
+"ACLU: American Civil Liberties Union",General Browsing
+"The Sierra Club",General Browsing
+"The Nature Conservancy",General Browsing
+"World Wildlife Fund",General Browsing
+"Greenpeace",General Browsing
+"PETA",General Browsing
+"The Humane Society of the United States",General Browsing
+"ASPCA",General Browsing
