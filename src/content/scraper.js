@@ -1,36 +1,26 @@
 // src/content/scraper.js
 (function() {
   try {
-    // Debug log - you can see this in the target web page's console
-    console.log("TabSynth: Scraper started.");
-
-    // 1. naive attempt: grab body text
+    // 1. Try standard body text
     let text = document.body ? document.body.innerText : "";
 
-    // 2. better attempt: try to find main content wrapper
-    const mainElement = document.querySelector('main') || document.querySelector('article') || document.querySelector('#content');
-    if (mainElement && mainElement.innerText.length > 50) {
-      text = mainElement.innerText;
+    // 2. If empty, try the document root (catches frameset/shadow DOM edges)
+    if (!text || text.trim().length < 50) {
+      text = document.documentElement.innerText || "";
     }
 
-    // 3. Fallback: if body is empty, try documentElement (catches some edge cases)
-    if (!text) {
-      text = document.documentElement.innerText;
+    // 3. If still empty, try walking the DOM (last resort)
+    if (!text || text.trim().length < 50) {
+      const allParagraphs = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, span');
+      text = Array.from(allParagraphs).map(el => el.innerText).join('\n');
     }
 
     if (!text || text.trim().length === 0) {
-      console.warn("TabSynth: No text found in DOM.");
       return "NO_CONTENT_FOUND";
     }
 
-    // 4. Cleanup text
-    const cleanText = text
-      .replace(/\s+/g, ' ') // Collapse whitespace
-      .trim()
-      .substring(0, 50000); // Limit size
-
-    console.log(`TabSynth: Returning ${cleanText.length} chars.`);
-    return cleanText;
+    // Cleanup: Limit to ~50k chars to prevent token overflow
+    return text.replace(/\s+/g, ' ').trim().substring(0, 50000);
 
   } catch (e) {
     console.error("TabSynth Scraper Error:", e);

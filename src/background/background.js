@@ -199,9 +199,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return chatHandlers.handleExtractTabContent(request, sendResponse);
   }
 
-  if (request.action === "SEND_CHAT_MESSAGE") {
-    return chatHandlers.handleSendChatMessage(request, sendResponse);
-  }
+  // if (request.action === "SEND_CHAT_MESSAGE") {
+  //   return chatHandlers.handleSendChatMessage(request, sendResponse);
+  // }
 
   // if (request.action === "SAVE_API_KEY") {
   //   return chatHandlers.handleSaveApiKey(request, sendResponse);
@@ -215,9 +215,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "EXTRACT_TAB_CONTENT") {
     return chatHandlers.handleExtractTabContent(request, sendResponse);
   }
-  if (request.action === "SEND_CHAT_MESSAGE") {
-    return chatHandlers.handleSendChatMessage(request, sendResponse);
-  }
+  // if (request.action === "SEND_CHAT_MESSAGE") {
+  //   return chatHandlers.handleSendChatMessage(request, sendResponse);
+  // }
   
   // UPDATED HANDLERS
   if (request.action === "SAVE_LLM_CONFIG") {
@@ -230,4 +230,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // --- Default Fallback ---
   sendResponse({ success: false, error: `Unknown action: ${request.action}` });
   return false;
+});
+
+// ===== NEW: LONG-LIVED CONNECTION LISTENER =====
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'chat_stream') {
+    chatHandlers.handleChatStreamConnection(port);
+  }
 });

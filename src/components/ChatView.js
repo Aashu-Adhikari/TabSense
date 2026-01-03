@@ -17,32 +17,26 @@ const ChatView = ({ tab, onBack }) => {
   const [input, setInput] = useState('');
   const [context, setContext] = useState('');
   
-  // UI State: 'initializing', 'extracting', 'ready', 'thinking', 'error'
+  // UI State
   const [status, setStatus] = useState('initializing');
   
-  // Ref for auto-scrolling
   const messagesEndRef = useRef(null);
+  const aiResponseBufferRef = useRef('');
 
-  // 1. On Mount: Check if LLM Config exists
   useEffect(() => {
     checkConfig();
   }, []);
 
-  // 2. Scroll to bottom whenever messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, status]);
 
   const checkConfig = async () => {
     const response = await chromeApi.getLLMConfig();
-    
     if (response.config && response.config.apiKey) {
       setHasConfig(true);
-      // Check if using the free tier model (simple heuristic based on model name)
       setIsFreeTier(response.config.model?.includes(':free'));
       setCheckingConfig(false);
-      
-      // If we haven't extracted content yet, do it now
       if (!context && status === 'initializing') {
         extractContent();
       }
@@ -60,8 +54,6 @@ const ChatView = ({ tab, onBack }) => {
     
     if (response.success && response.content) {
       setContext(response.content);
-      
-      // Add initial greeting
       setMessages([{ 
         role: 'assistant', 
         content: `I've read **${tab.title}**. What would you like to know?` 
@@ -69,7 +61,7 @@ const ChatView = ({ tab, onBack }) => {
       setStatus('ready');
     } else {
       console.error("ChatView: Extraction failed.", response.error);
-      setStatus('error');
+      setStatus('error'); // Keep 'error' here because we can't chat without content
       setMessages([{ 
         role: 'assistant', 
         content: `**Error:** I couldn't read the content of this page.\n\nReason: *${response.error || 'Empty page'}*.\n\nPlease try refreshing the tab.` 
@@ -77,30 +69,46 @@ const ChatView = ({ tab, onBack }) => {
     }
   };
 
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || status === 'thinking') return;
 
-    // 1. Add User Message
     const userMsg = { role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setStatus('thinking');
 
-    // 2. Prepare Context (Last 10 messages + new message)
     const recentHistory = messages.slice(-10);
     const apiMessages = [...recentHistory, userMsg];
 
-    // 3. Send to API
-    const response = await chromeApi.sendChatMessage(apiMessages, context);
-
-    // 4. Handle Response
-    if (response.success) {
-      setMessages(prev => [...prev, { role: 'assistant', content: response.reply }]);
-    } else {
-      setMessages(prev => [...prev, { role: 'assistant', content: `**API Error:** ${response.error}` }]);
-    }
-    setStatus('ready');
+    // --- NEW CONNECTION LOGIC ---
+    aiResponseBufferRef.current = ''; 
+    
+    // Start the stream
+    chromeApi.connectChatStream(apiMessages, context, {
+      onChunk: (text) => {
+        aiResponseBufferRef.current += text;
+        setMessages(prev => {
+          const newMessages = [...prev];
+          if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+            newMessages[newMessages.length - 1].content = aiResponseBufferRef.current;
+          } else {
+            newMessages.push({ role: 'assistant', content: aiResponseBufferRef.current });
+          }
+          return [...newMessages];
+        });
+      },
+      onEnd: () => {
+        console.log("Stream finished successfully");
+        setStatus('ready');
+      },
+      onError: (errText) => {
+        console.error("Stream error:", errText);
+        setMessages(prev => [...prev, { role: 'assistant', content: `**Error:** ${errText}` }]);
+        setStatus('ready');
+      }
+    });
   };
 
   // --- RENDER HELPERS ---
@@ -109,13 +117,10 @@ const ChatView = ({ tab, onBack }) => {
     return <div className="loading-state">Checking AI settings...</div>;
   }
 
-  // View 1: Settings / Setup Screen
-  // Shown if no config exists OR if user clicked the settings gear
   if (!hasConfig || showSettings) {
     return (
       <div className="chat-view-container">
         <div className="chat-header">
-          {/* Back button logic: If we have config, go back to chat. If not, go back to main menu. */}
           <button 
             className="back-btn" 
             onClick={() => hasConfig ? setShowSettings(false) : onBack()}
@@ -129,7 +134,7 @@ const ChatView = ({ tab, onBack }) => {
             isFirstSetup={!hasConfig}
             onSaved={() => {
               setShowSettings(false);
-              checkConfig(); // Reload config to update free tier status/key
+              checkConfig(); 
             }}
             onCancel={hasConfig ? () => setShowSettings(false) : null}
           />
@@ -138,15 +143,11 @@ const ChatView = ({ tab, onBack }) => {
     );
   }
 
-  // View 2: Main Chat Interface
   return (
     <div className="chat-view-container">
-      {/* Header */}
       <div className="chat-header">
         <button className="back-btn" onClick={onBack}>←</button>
         <span className="chat-tab-title" title={tab.title}>{tab.title}</span>
-        
-        {/* Settings Button */}
         <button 
           className="settings-btn" 
           onClick={() => setShowSettings(true)}
@@ -156,7 +157,6 @@ const ChatView = ({ tab, onBack }) => {
         </button>
       </div>
 
-      {/* Message List */}
       <div className="chat-messages">
         {status === 'extracting' && (
           <div className="loading-state">
@@ -170,7 +170,6 @@ const ChatView = ({ tab, onBack }) => {
             <ReactMarkdown 
               remarkPlugins={[remarkGfm]}
               components={{
-                // Ensure links open in a new tab
                 a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
               }}
             >
@@ -185,27 +184,26 @@ const ChatView = ({ tab, onBack }) => {
           </div>
         )}
         
-        {/* Invisible element to scroll to */}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Free Tier Notice */}
       {isFreeTier && (
         <div className="status-bar-notice">
           ⚡ Using Free Model (Latency may occur)
         </div>
       )}
 
-      {/* Input Area */}
       <form className="chat-input-form" onSubmit={handleSendMessage}>
         <input 
           value={input} 
           onChange={e => setInput(e.target.value)} 
-          placeholder={status === 'error' ? "Refresh tab to try again" : "Ask a question..."}
-          disabled={status !== 'ready'}
+          // FIX: Show "Ask a question..." even after error, unless extraction failed
+          placeholder={status === 'error' && !context ? "Refresh tab to try again" : "Ask a question..."}
+          // FIX: Only disable if status is 'thinking' or 'extracting'. 'ready' and 'error' (API error) allow typing.
+          disabled={status === 'thinking' || status === 'extracting'}
           autoFocus
         />
-        <button type="submit" disabled={status !== 'ready' || !input.trim()}>
+        <button type="submit" disabled={status === 'thinking' || status === 'extracting' || !input.trim()}>
           Send
         </button>
       </form>

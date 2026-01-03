@@ -188,6 +188,38 @@ class ChromeApiService {
     });
   }
 
+    connectChatStream(messages, context, callbacks) {
+    const { onChunk, onEnd, onError } = callbacks;
+    const port = chrome.runtime.connect({ name: 'chat_stream' });
+
+    // Send the initial request payload
+    port.postMessage({ messages, context });
+
+    // Listen for stream messages from background
+    port.onMessage.addListener((msg) => {
+      if (msg.type === 'chunk') {
+        if (onChunk) onChunk(msg.text);
+      } else if (msg.type === 'end') {
+        if (onEnd) onEnd();
+        port.disconnect();
+      } else if (msg.type === 'error') {
+        if (onError) onError(msg.text);
+        port.disconnect();
+      }
+    });
+
+    // Handle disconnection (e.g., service worker dies)
+    port.onDisconnect.addListener(() => {
+      if (chrome.runtime.lastError) {
+        if (onError) onError(chrome.runtime.lastError.message);
+      }
+    });
+
+    // Return a function to manually cancel the stream
+    return () => port.disconnect();
+  }
+
+
   // async saveApiKey(apiKey) {
   //   return new Promise((resolve) => {
   //     chrome.runtime.sendMessage({ action: "SAVE_API_KEY", apiKey }, resolve);
@@ -203,17 +235,17 @@ class ChromeApiService {
 // ... existing methods ...
 
   // ===== CHAT & CONFIG METHODS =====
-  async extractTabContent(tabId) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "EXTRACT_TAB_CONTENT", tabId }, resolve);
-    });
-  }
+  // async extractTabContent(tabId) {
+  //   return new Promise((resolve) => {
+  //     chrome.runtime.sendMessage({ action: "EXTRACT_TAB_CONTENT", tabId }, resolve);
+  //   });
+  // }
 
-  async sendChatMessage(messages, context) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "SEND_CHAT_MESSAGE", messages, context }, resolve);
-    });
-  }
+  // async sendChatMessage(messages, context) {
+  //   return new Promise((resolve) => {
+  //     chrome.runtime.sendMessage({ action: "SEND_CHAT_MESSAGE", messages, context }, resolve);
+  //   });
+  // }
 
   // REPLACED: saveApiKey -> saveLLMConfig
   async saveLLMConfig(config) {
