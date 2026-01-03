@@ -174,6 +174,62 @@ class ChromeApiService {
       chrome.runtime.sendMessage({ action: "PING_ML" }, resolve);
     });
   }
+
+  // ===== CHAT METHODS =====
+  async extractTabContent(tabId) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "EXTRACT_TAB_CONTENT", tabId }, resolve);
+    });
+  }
+
+  async sendChatMessage(messages, context) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "SEND_CHAT_MESSAGE", messages, context }, resolve);
+    });
+  }
+
+  // async saveApiKey(apiKey) {
+  //   return new Promise((resolve) => {
+  //     chrome.runtime.sendMessage({ action: "SAVE_API_KEY", apiKey }, resolve);
+  //   });
+  // }
+
+  // async checkApiKey() {
+  //   return new Promise((resolve) => {
+  //     chrome.runtime.sendMessage({ action: "CHECK_API_KEY" }, resolve);
+  //   });
+  // }
+
+// ... existing methods ...
+
+  // ===== CHAT & CONFIG METHODS =====
+  async extractTabContent(tabId) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "EXTRACT_TAB_CONTENT", tabId }, resolve);
+    });
+  }
+
+  async sendChatMessage(messages, context) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "SEND_CHAT_MESSAGE", messages, context }, resolve);
+    });
+  }
+
+  // REPLACED: saveApiKey -> saveLLMConfig
+  async saveLLMConfig(config) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "SAVE_LLM_CONFIG", config }, resolve);
+    });
+  }
+
+  // REPLACED: checkApiKey -> getLLMConfig
+  async getLLMConfig() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "GET_LLM_CONFIG" }, resolve);
+    });
+  }
+
 }
+
 
 export const chromeApi = new ChromeApiService();

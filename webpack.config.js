@@ -1,16 +1,18 @@
+// webpack.config.js
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isDevelopment = argv.mode === 'development';
-
+  
   return {
     mode: argv.mode || 'production',
     entry: {
       popup: './src/popup/index.js',
       background: './src/background/background.js',
-      content: './src/content/content.js'
+      content: './src/content/content.js' 
+      // REMOVED: scraper entry. We don't want to bundle it.
     },
     output: {
       path: path.resolve(__dirname, 'build'),
@@ -49,8 +51,9 @@ module.exports = (env, argv) => {
       new CopyWebpackPlugin({
         patterns: [
           { from: "src/manifest.json", to: "manifest.json" },
-          // MODIFICATION: This new rule copies your trained model into the build folder
-          { from: "src/ml/pretrained-model", to: "ml/pretrained-model" }
+          { from: "src/ml/pretrained-model", to: "ml/pretrained-model" },
+          // ADD THIS LINE: Copy the scraper raw to the build root
+          { from: "src/content/scraper.js", to: "scraper.js" } 
         ]
       })
     ],
