@@ -1,10 +1,158 @@
 // src/background/messageHandlers/chatHandlers.js
 import { llmService } from '../../services/llmService.js';
 
-// ... (Keep your corrected streamSSE function here) ...
+// =================================================================
+// ===== HELPER: WAIT FOR TAB LOAD =================================
+// =================================================================
+/**
+ * Checks if a tab is discarded/unloaded. If so, reloads it and waits
+ * for the 'complete' status before resolving.
+ */
+function ensureTabIsReady(tabId) {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.get(tabId, (tab) => {
+      if (chrome.runtime.lastError) return reject("Tab not found");
+
+      // If tab is already loaded and active, we are good.
+      if (!tab.discarded && tab.status === 'complete') {
+        return resolve(tab);
+      }
+
+      console.log(`Tab ${tabId} is discarded or loading. Waking it up...`);
+
+      // If discarded, we must reload it to make it "alive" again
+      if (tab.discarded) {
+        chrome.tabs.reload(tabId);
+      }
+
+      // Set a timeout to avoid hanging forever if a page fails to load
+      const timeoutId = setTimeout(() => {
+        chrome.tabs.onUpdated.removeListener(listener);
+        console.warn(`Timeout waiting for tab ${tabId} to load.`);
+        resolve(tab); // Try to scrape whatever is there anyway
+      }, 10000); // 10 second max wait
+
+      // Listen for the loading completion
+      const listener = (updatedTabId, changeInfo) => {
+        if (updatedTabId === tabId && changeInfo.status === 'complete') {
+          clearTimeout(timeoutId);
+          chrome.tabs.onUpdated.removeListener(listener);
+          resolve(tab);
+        }
+      };
+
+      chrome.tabs.onUpdated.addListener(listener);
+    });
+  });
+}
+
+// =================================================================
+// ===== INLINE SCRAPER FUNCTION ===================================
+// =================================================================
+function getPageContent() {
+  try {
+    // 1. Try to find main content wrapper
+    let text = "";
+    const mainElement = document.querySelector('main') || document.querySelector('article') || document.querySelector('#content');
+    
+    if (mainElement && mainElement.innerText.length > 50) {
+      text = mainElement.innerText;
+    } else {
+      text = document.body ? document.body.innerText : (document.documentElement.innerText || "");
+    }
+
+    if (!text || text.trim().length === 0) return "NO_CONTENT_FOUND";
+
+    return text.replace(/\s+/g, ' ').trim().substring(0, 50000);
+  } catch (e) {
+    return "NO_CONTENT_FOUND";
+  }
+}
+
+// =================================================================
+// ===== GROUP CONTENT EXTRACTION (UPDATED) ========================
+// =================================================================
+
+export function handleExtractGroupContent(request, sendResponse) {
+  const { groupId } = request;
+
+  // 1. Expand the group first (Visual feedback & ensures tabs are "visible" to Chrome)
+  chrome.tabGroups.update(groupId, { collapsed: false });
+
+  // 2. Get all tabs
+  chrome.tabs.query({ groupId }, async (tabs) => {
+    if (!tabs || tabs.length === 0) {
+      sendResponse({ success: false, error: "Group is empty." });
+      return;
+    }
+
+    // 3. Process tabs in parallel, but wait for them to load
+    const scrapePromises = tabs.map(async (tab) => {
+      // Skip system pages
+      if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.includes('webstore')) {
+        return null;
+      }
+
+      try {
+        // AWAIT the awakening/loading of the tab
+        await ensureTabIsReady(tab.id);
+
+        // Now safe to inject
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: getPageContent,
+        });
+
+        const content = results?.[0]?.result;
+        if (!content || content === "NO_CONTENT_FOUND") return null;
+        
+        // Truncate per-tab content
+        const truncated = content.substring(0, 5000); 
+        
+        return {
+          title: tab.title,
+          url: tab.url,
+          content: truncated
+        };
+      } catch (err) {
+        console.warn(`Failed to scrape tab ${tab.id}:`, err);
+        return null;
+      }
+    });
+
+    // 4. Wait for all tabs to be ready and scraped
+    const results = await Promise.all(scrapePromises);
+    
+    const validResults = results.filter(r => r !== null);
+    
+    if (validResults.length === 0) {
+      sendResponse({ success: false, error: "No readable tabs found in this group." });
+      return;
+    }
+
+    const combinedContext = validResults.map(doc => `
+      ---
+      SOURCE TITLE: ${doc.title}
+      SOURCE URL: ${doc.url}
+      CONTENT:
+      ${doc.content}
+      ---
+    `).join('\n');
+
+    sendResponse({ 
+      success: true, 
+      content: combinedContext, 
+      count: validResults.length 
+    });
+  });
+
+  return true; // Keep channel open
+}
+
+// ... (Rest of file: streamSSE, handleSendChatMessage, handleExtractTabContent etc. remains unchanged)
+// PASTE THE REST OF YOUR EXISTING CODE BELOW
+
 async function* streamSSE(responseBody) {
-  // (Paste the robust version we fixed in previous steps: 
-  // splitting by '\n' and checking delta.reasoning || delta.reasoning_content)
   const reader = responseBody.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
@@ -28,10 +176,8 @@ async function* streamSSE(responseBody) {
         const delta = data.choices?.[0]?.delta;
 
         if (delta) {
-          // Content
           if (delta.content) yield delta.content;
-          
-          // // Reasoning (DeepSeek/Generic)
+          // Filtering reasoning 
           // const reasoning = delta.reasoning || delta.reasoning_content || delta.thinking;
           // if (reasoning) yield `*${reasoning}*`; 
         }
@@ -40,34 +186,33 @@ async function* streamSSE(responseBody) {
   }
 }
 
-// ===== NEW HANDLER FOR PORT CONNECTION =====
-export function handleChatStreamConnection(port) {
-  // Wait for the frontend to send the messages/context payload
-  port.onMessage.addListener(async (request) => {
-    const { messages, context } = request;
+export function handleSendChatMessage(request, sendResponse) {
+  const { messages, context } = request;
 
-    try {
-      const responseBody = await llmService.chat(messages, context);
-      
-      if (!responseBody) {
-        port.postMessage({ type: 'error', text: "Empty response from API" });
-        return;
+  llmService.chat(messages, context)
+    .then(async (responseBody) => {
+      if (!responseBody) throw new Error("No response from AI Provider");
+
+      const channel = new MessageChannel();
+      sendResponse({ success: true, port: channel.port1 });
+
+      try {
+        for await (const chunk of streamSSE(responseBody)) {
+          channel.port2.postMessage({ type: 'chunk', text: chunk });
+        }
+        channel.port2.postMessage({ type: 'end' });
+      } catch (error) {
+        channel.port2.postMessage({ type: 'error', text: error.message });
+      } finally {
+        channel.port2.close();
       }
+    })
+    .catch(err => {
+      sendResponse({ success: false, error: err.message });
+    });
 
-      for await (const chunk of streamSSE(responseBody)) {
-        // Send directly through the open port
-        port.postMessage({ type: 'chunk', text: chunk });
-      }
-      port.postMessage({ type: 'end' });
-
-    } catch (error) {
-      console.error('Streaming error:', error);
-      port.postMessage({ type: 'error', text: error.message });
-    }
-  });
+  return true;
 }
-
-// ... (Keep handleExtractTabContent, config handlers, etc.)
 
 export function handleExtractTabContent(request, sendResponse) {
   const { tabId } = request;
@@ -85,13 +230,14 @@ export function handleExtractTabContent(request, sendResponse) {
 
     chrome.scripting.executeScript({
       target: { tabId },
-      files: ['scraper.js']
+      func: getPageContent, 
     })
     .then(results => {
       if (!results || !results[0]) {
         sendResponse({ success: false, error: "Script injection failed" });
         return;
       }
+      
       const content = results[0].result;
       
       if (!content || content === "NO_CONTENT_FOUND") {
@@ -106,6 +252,25 @@ export function handleExtractTabContent(request, sendResponse) {
   });
 
   return true;
+}
+
+export function handleChatStreamConnection(port) {
+  port.onMessage.addListener(async (request) => {
+    const { messages, context } = request;
+    try {
+      const responseBody = await llmService.chat(messages, context);
+      if (!responseBody) {
+        port.postMessage({ type: 'error', text: "Empty response" });
+        return;
+      }
+      for await (const chunk of streamSSE(responseBody)) {
+        port.postMessage({ type: 'chunk', text: chunk });
+      }
+      port.postMessage({ type: 'end' });
+    } catch (error) {
+      port.postMessage({ type: 'error', text: error.message });
+    }
+  });
 }
 
 export function handleSaveLLMConfig(request, sendResponse) {

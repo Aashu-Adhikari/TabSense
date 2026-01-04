@@ -8,7 +8,8 @@ const GroupCard = ({
   onUngroupSingleTab, 
   onUngroupAll, 
   onStartRename, 
-  onOpenTab 
+  onOpenTab,
+  onChatWithGroup 
 }) => {
   const [renamingGroup, setRenamingGroup] = useState(null);
   const [newGroupName, setNewGroupName] = useState('');
@@ -107,6 +108,18 @@ const GroupCard = ({
           </div>
           
           <div className="group-actions">
+            {/* NEW CHAT BUTTON */}
+            <button
+              className="group-action-btn ai-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChatWithGroup(group);
+              }}
+              style={{ fontWeight: 'bold', color: '#4f46e5' }}
+            >
+              🤖 Chat
+            </button>
+
             <button
               className="group-action-btn rename-btn"
               onClick={handleStartRename}

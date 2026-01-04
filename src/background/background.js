@@ -194,37 +194,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false; // No response needed for this fire-and-forget action
   }
 
-  // --- Chat Handlers (New Phase 3) ---
-  if (request.action === "EXTRACT_TAB_CONTENT") {
-    return chatHandlers.handleExtractTabContent(request, sendResponse);
-  }
-
-  // if (request.action === "SEND_CHAT_MESSAGE") {
-  //   return chatHandlers.handleSendChatMessage(request, sendResponse);
-  // }
-
-  // if (request.action === "SAVE_API_KEY") {
-  //   return chatHandlers.handleSaveApiKey(request, sendResponse);
-  // }
-
-  // if (request.action === "CHECK_API_KEY") {
-  //   return chatHandlers.handleGetApiKey(request, sendResponse);
-  // }
-
   // --- Chat Handlers ---
   if (request.action === "EXTRACT_TAB_CONTENT") {
     return chatHandlers.handleExtractTabContent(request, sendResponse);
   }
-  // if (request.action === "SEND_CHAT_MESSAGE") {
-  //   return chatHandlers.handleSendChatMessage(request, sendResponse);
-  // }
-  
+
   // UPDATED HANDLERS
   if (request.action === "SAVE_LLM_CONFIG") {
     return chatHandlers.handleSaveLLMConfig(request, sendResponse);
   }
   if (request.action === "GET_LLM_CONFIG") {
     return chatHandlers.handleGetLLMConfig(request, sendResponse);
+  }
+  
+  if (request.action === "EXTRACT_TAB_CONTENT") {
+    return chatHandlers.handleExtractTabContent(request, sendResponse);
+  }
+  // NEW:
+  if (request.action === "EXTRACT_GROUP_CONTENT") {
+    return chatHandlers.handleExtractGroupContent(request, sendResponse);
   }
 
   // --- Default Fallback ---
@@ -238,3 +226,4 @@ chrome.runtime.onConnect.addListener((port) => {
     chatHandlers.handleChatStreamConnection(port);
   }
 });
+

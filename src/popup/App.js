@@ -46,6 +46,7 @@ function App() {
 
   // Chat State
   const [activeChatTab, setActiveChatTab] = useState(null);
+  const [activeChatGroup, setActiveChatGroup] = useState(null);
   const [currentTab, setCurrentTab] = useState(null);
 
   // ===== NEW STATE FOR CUSTOM GROUP CREATION =====
@@ -155,6 +156,11 @@ function App() {
     return <ChatView tab={activeChatTab} onBack={() => setActiveChatTab(null)} />;
   }
 
+  // 2. Chat with Group (NEW)
+  if (activeChatGroup) {
+    return <ChatView group={activeChatGroup} onBack={() => setActiveChatGroup(null)} />;
+  }
+
   // ===== NEW VIEW: Custom Group Creation =====
   if (tabForNewGroup) {
     return (
@@ -246,6 +252,7 @@ function App() {
                     onUngroupAll={handleUngroupAll}
                     onStartRename={handleStartRename}
                     onOpenTab={handleOpenTab}
+                    onChatWithGroup={setActiveChatGroup}
                   />
                 ))
               ) : (

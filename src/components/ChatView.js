@@ -5,7 +5,7 @@ import { chromeApi } from '../services/chromeApi';
 import SettingsView from './SettingsView';
 import Button from './common/Button';
 
-const ChatView = ({ tab, onBack }) => {
+const ChatView = ({ tab, group, onBack }) => {
   // Configuration State
   const [hasConfig, setHasConfig] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -22,6 +22,8 @@ const ChatView = ({ tab, onBack }) => {
   
   const messagesEndRef = useRef(null);
   const aiResponseBufferRef = useRef('');
+
+  const targetTitle = tab ? tab.title : (group ? group.title : "Context");
 
   useEffect(() => {
     checkConfig();
@@ -48,26 +50,33 @@ const ChatView = ({ tab, onBack }) => {
 
   const extractContent = async () => {
     setStatus('extracting');
-    console.log("ChatView: Requesting content extraction for tab", tab.id);
     
-    const response = await chromeApi.extractTabContent(tab.id);
+    let response;
     
+    // LOGIC FORK: TAB vs GROUP
+    if (tab) {
+      console.log("ChatView: Extracting Tab", tab.id);
+      response = await chromeApi.extractTabContent(tab.id);
+    } else if (group) {
+      console.log("ChatView: Extracting Group", group.id);
+      response = await chromeApi.extractGroupContent(group.id);
+    }
+
     if (response.success && response.content) {
       setContext(response.content);
-      setMessages([{ 
-        role: 'assistant', 
-        content: `I've read **${tab.title}**. What would you like to know?` 
-      }]);
+      
+      const introMsg = tab 
+        ? `I've read **${targetTitle}**. What would you like to know?`
+        : `I've read **${response.count} tabs** in **${targetTitle}**. Ask me about them!`;
+
+      setMessages([{ role: 'assistant', content: introMsg }]);
       setStatus('ready');
     } else {
-      console.error("ChatView: Extraction failed.", response.error);
-      setStatus('error'); // Keep 'error' here because we can't chat without content
-      setMessages([{ 
-        role: 'assistant', 
-        content: `**Error:** I couldn't read the content of this page.\n\nReason: *${response.error || 'Empty page'}*.\n\nPlease try refreshing the tab.` 
-      }]);
+      setStatus('error');
+      setMessages([{ role: 'assistant', content: `**Error:** ${response.error || 'No readable content found.'}` }]);
     }
   };
+
 
 
   const handleSendMessage = async (e) => {
@@ -147,7 +156,10 @@ const ChatView = ({ tab, onBack }) => {
     <div className="chat-view-container">
       <div className="chat-header">
         <button className="back-btn" onClick={onBack}>←</button>
-        <span className="chat-tab-title" title={tab.title}>{tab.title}</span>
+        {/* Display Tab Title OR Group Title */}
+        <span className="chat-tab-title" title={targetTitle}>
+          {group ? '📁 ' : ''}{targetTitle}
+        </span>
         <button 
           className="settings-btn" 
           onClick={() => setShowSettings(true)}
