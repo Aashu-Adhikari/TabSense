@@ -1,17 +1,17 @@
 // src/services/llmService.js
 
-export const DEFAULT_FREE_CONFIG = {
+export const DEFAULT_MODEL = {
   provider: 'openrouter',
   baseUrl: 'https://openrouter.ai/api/v1',
-  apiKey: '', // User must still provide this
-  model: 'google/gemini-2.0-flash-exp:free'
+  apiKey: '', // User must provide their own API key
+  model: '' // User selects their preferred model
 };
 
 class LLMService {
   async getConfig() {
     const result = await chrome.storage.local.get(['llm_settings']);
     // Merge with defaults to ensure we always have fields
-    return { ...DEFAULT_FREE_CONFIG, ...result.llm_settings };
+    return { ...DEFAULT_MODEL, ...result.llm_settings };
   }
 
   async validateKey(apiKey) {
