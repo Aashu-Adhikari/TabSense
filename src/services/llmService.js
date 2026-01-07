@@ -28,10 +28,16 @@ class LLMService {
 
     const systemPrompt = {
       role: 'system',
-      content: `You are a helpful AI assistant analyzing a webpage. 
+      content: `You are a helpful AI assistant analyzing webpage content. 
       Answer the user's questions based primarily on the provided webpage context.
       
-      WEBPAGE CONTEXT:
+      CITATION RULES:
+      - When referencing specific information, cite the source using the format: [Source N]
+      - Where N is the source number (1, 2, 3...) corresponding to the numbered sources below
+      - Only cite when referencing specific facts from the context
+      - If information comes from a specific source, cite it immediately after the claim
+      
+      SOURCES:
       ${context}`
     };
 

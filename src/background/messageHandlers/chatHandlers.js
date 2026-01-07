@@ -110,6 +110,7 @@ export function handleExtractGroupContent(request, sendResponse) {
         const truncated = content.substring(0, 5000); 
         
         return {
+          tabId: tab.id,
           title: tab.title,
           url: tab.url,
           content: truncated
@@ -130,10 +131,11 @@ export function handleExtractGroupContent(request, sendResponse) {
       return;
     }
 
-    const combinedContext = validResults.map(doc => `
+    const combinedContext = validResults.map((doc, index) => `
       ---
-      SOURCE TITLE: ${doc.title}
-      SOURCE URL: ${doc.url}
+      [Source ${index + 1}]
+      TITLE: ${doc.title}
+      URL: ${doc.url}
       CONTENT:
       ${doc.content}
       ---
@@ -142,7 +144,8 @@ export function handleExtractGroupContent(request, sendResponse) {
     sendResponse({ 
       success: true, 
       content: combinedContext, 
-      count: validResults.length 
+      count: validResults.length,
+      tabs: validResults.map(r => ({ id: r.tabId, title: r.title, url: r.url }))
     });
   });
 
@@ -282,5 +285,12 @@ export function handleGetLLMConfig(request, sendResponse) {
   chrome.storage.local.get(['llm_settings'], (res) => {
     sendResponse({ success: true, config: res.llm_settings || null });
   });
+  return true;
+}
+
+export function handleSwitchToTab(request, sendResponse) {
+  const { tabId } = request;
+  chrome.tabs.update(tabId, { active: true });
+  sendResponse({ success: true });
   return true;
 }

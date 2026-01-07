@@ -5,6 +5,88 @@ import { chromeApi } from '../services/chromeApi';
 import SettingsView from './SettingsView';
 import Button from './common/Button';
 
+// Quick Action Chips data structure
+const QUICK_CHIPS = [
+  {
+    id: 'summarize',
+    emoji: '📝',
+    label: 'Summarize',
+    prompt: 'Provide a concise bullet-point summary of this content.'
+  },
+  {
+    id: 'takeaways',
+    emoji: '🔑',
+    label: 'Key Takeaways',
+    prompt: 'What are the most important takeaways?'
+  },
+  {
+    id: 'issues',
+    emoji: '🤔',
+    label: 'Find Issues',
+    prompt: 'Are there any contradictions or errors?'
+  }
+];
+
+// Helper function to process citation text into clickable elements
+// Converts patterns like [Source 1] or [Source 1: Tab Title] into clickable spans
+function processCitationText(text, tabMetadata, onCitationClick) {
+  // Regex to match [Source N] or [Source N: Title] patterns
+  const citationRegex = /\[Source\s+(\d+)(?:[:\s]+([^\]]+))?\]/gi;
+  
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = citationRegex.exec(text)) !== null) {
+    // Add text before the citation
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    
+    const sourceNum = parseInt(match[1]);
+    const customTitle = match[2] ? match[2].trim() : null;
+    const tabInfo = tabMetadata[sourceNum - 1];
+    const title = customTitle || (tabInfo ? tabInfo.title : `Source ${sourceNum}`);
+    
+    parts.push(
+      <button
+        key={`citation-${match.index}`}
+        className="citation-link"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onCitationClick(sourceNum);
+        }}
+        title={`Jump to: ${tabInfo?.title || `Source ${sourceNum}`}`}
+      >
+        <span className="citation-icon">🔗</span>
+        <span className="citation-label">{title}</span>
+      </button>
+    );
+    
+    lastIndex = citationRegex.lastIndex;
+  }
+  
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+  
+  return parts;
+}
+
+// Component to render text with citation processing
+function CitationText({ children, tabMetadata, onCitationClick }) {
+  const text = children || '';
+  const hasCitations = /\[Source\s+\d+\]/i.test(text);
+  
+  if (!hasCitations || !tabMetadata.length) {
+    return <>{text}</>;
+  }
+  
+  return <>{processCitationText(text, tabMetadata, onCitationClick)}</>;
+}
+
 const ChatView = ({ tab, group, onBack }) => {
   // Configuration State
   const [hasConfig, setHasConfig] = useState(false);
@@ -16,6 +98,7 @@ const ChatView = ({ tab, group, onBack }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [context, setContext] = useState('');
+  const [tabMetadata, setTabMetadata] = useState([]); // Store tab IDs for citations
   
   // UI State
   const [status, setStatus] = useState('initializing');
@@ -64,6 +147,7 @@ const ChatView = ({ tab, group, onBack }) => {
 
     if (response.success && response.content) {
       setContext(response.content);
+      setTabMetadata(response.tabs || []); // Store tab metadata for citations
       
       const introMsg = tab 
         ? `I've read **${targetTitle}**. What would you like to know?`
@@ -77,7 +161,27 @@ const ChatView = ({ tab, group, onBack }) => {
     }
   };
 
+  // Handle citation click - switch to the referenced tab
+  const handleCitationClick = async (sourceNum) => {
+    console.log('Citation clicked:', sourceNum, tabMetadata);
+    const tabIndex = sourceNum - 1;
+    if (tabMetadata[tabIndex]) {
+      await chromeApi.switchToTab(tabMetadata[tabIndex].id);
+    } else {
+      console.warn('Tab metadata not found for source:', sourceNum);
+    }
+  };
 
+  // Handle chip click - set input and auto-submit
+  const handleChipClick = (chip) => {
+    setInput(chip.prompt);
+    setStatus('ready');
+    // Auto-submit after setting input
+    setTimeout(() => {
+      const form = document.querySelector('.chat-input-form');
+      if (form) form.requestSubmit();
+    }, 100);
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -152,6 +256,9 @@ const ChatView = ({ tab, group, onBack }) => {
     );
   }
 
+  // Check if we should show chips (for any chat context with content)
+  const showChips = (tab || group) && context.length > 0;
+
   return (
     <div className="chat-view-container">
       <div className="chat-header">
@@ -169,6 +276,23 @@ const ChatView = ({ tab, group, onBack }) => {
         </button>
       </div>
 
+      {/* Quick Action Chips - only shown for multi-tab groups */}
+      {showChips && (
+        <div className="quick-chips">
+          {QUICK_CHIPS.map(chip => (
+            <button 
+              key={chip.id}
+              className="chip-button"
+              onClick={() => handleChipClick(chip)}
+              disabled={status === 'thinking' || status === 'extracting'}
+            >
+              <span className="chip-emoji">{chip.emoji}</span>
+              <span className="chip-label">{chip.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="chat-messages">
         {status === 'extracting' && (
           <div className="loading-state">
@@ -179,14 +303,50 @@ const ChatView = ({ tab, group, onBack }) => {
 
         {messages.map((m, i) => (
           <div key={i} className={`chat-bubble ${m.role}`}>
-            <ReactMarkdown 
-              remarkPlugins={[remarkGfm]}
-              components={{
-                a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
-              }}
-            >
-              {m.content}
-            </ReactMarkdown>
+            {(() => {
+              // Pre-process markdown to convert [Source N] to markdown links
+              const processedContent = m.content.replace(
+                /\[Source\s+(\d+)(?:[:\s]+([^\]]+))?\]/gi,
+                (match, num, title) => {
+                  const sourceNum = parseInt(num);
+                  const tabInfo = tabMetadata[sourceNum - 1];
+                  const linkTitle = title || (tabInfo ? tabInfo.title : `Source ${sourceNum}`);
+                  return `[🔗 ${linkTitle}](/citation-${sourceNum})`;
+                }
+              );
+              
+              return (
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    a: ({node, href, children}) => {
+                      // Check if this is a citation link
+                      const citationMatch = href?.match(/\/citation-(\d+)/);
+                      if (citationMatch) {
+                        const sourceNum = parseInt(citationMatch[1]);
+                        const tabInfo = tabMetadata[sourceNum - 1];
+                        return (
+                          <button
+                            className="citation-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleCitationClick(sourceNum);
+                            }}
+                            title={`Jump to: ${tabInfo?.title || `Source ${sourceNum}`}`}
+                          >
+                            {children}
+                          </button>
+                        );
+                      }
+                      return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+                    }
+                  }}
+                >
+                  {processedContent}
+                </ReactMarkdown>
+              );
+            })()}
           </div>
         ))}
 
@@ -209,9 +369,7 @@ const ChatView = ({ tab, group, onBack }) => {
         <input 
           value={input} 
           onChange={e => setInput(e.target.value)} 
-          // FIX: Show "Ask a question..." even after error, unless extraction failed
           placeholder={status === 'error' && !context ? "Refresh tab to try again" : "Ask a question..."}
-          // FIX: Only disable if status is 'thinking' or 'extracting'. 'ready' and 'error' (API error) allow typing.
           disabled={status === 'thinking' || status === 'extracting'}
           autoFocus
         />

@@ -199,20 +199,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return chatHandlers.handleExtractTabContent(request, sendResponse);
   }
 
-  // UPDATED HANDLERS
+  if (request.action === "EXTRACT_GROUP_CONTENT") {
+    return chatHandlers.handleExtractGroupContent(request, sendResponse);
+  }
+
+  if (request.action === "SWITCH_TO_TAB") {
+    return chatHandlers.handleSwitchToTab(request, sendResponse);
+  }
+
   if (request.action === "SAVE_LLM_CONFIG") {
     return chatHandlers.handleSaveLLMConfig(request, sendResponse);
   }
   if (request.action === "GET_LLM_CONFIG") {
     return chatHandlers.handleGetLLMConfig(request, sendResponse);
-  }
-  
-  if (request.action === "EXTRACT_TAB_CONTENT") {
-    return chatHandlers.handleExtractTabContent(request, sendResponse);
-  }
-  // NEW:
-  if (request.action === "EXTRACT_GROUP_CONTENT") {
-    return chatHandlers.handleExtractGroupContent(request, sendResponse);
   }
 
   // --- Default Fallback ---

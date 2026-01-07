@@ -238,6 +238,12 @@ class ChromeApiService {
     });
   }
 
+  async switchToTab(tabId) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "SWITCH_TO_TAB", tabId }, resolve);
+    });
+  }
+
 }
 
 
