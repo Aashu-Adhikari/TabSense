@@ -370,8 +370,5 @@ class TabClassifier {
 }
 
 const tabClassifier = new TabClassifier();
-tabClassifier.initialize().catch(error => {
-  console.error('TabClassifier: Background initialization failed:', error);
-});
 
 export { tabClassifier };

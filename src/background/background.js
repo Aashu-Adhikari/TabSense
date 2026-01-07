@@ -1,7 +1,7 @@
 // src/background/background.js
 
 // Background Service Worker - Modular Architecture
-import { tabClassifier } from '../ml/classifier.js';
+// import { tabClassifier } from '../ml/classifier.js'; // Removed - ML initializes lazily
 
 // Import all message handlers
 import * as tabHandlers from './messageHandlers/tabHandlers.js';
@@ -99,12 +99,6 @@ chrome.runtime.onInstalled.addListener(updateTabCache);
 // ===== ML INITIALIZATION =========================================
 // =================================================================
 
-// Initialize ML on service worker startup
-tabClassifier.initialize().then(() => {
-  console.log('Background: ML initialized successfully');
-}).catch(error => {
-  console.error('Background: ML initialization failed:', error);
-});
 
 
 // =================================================================

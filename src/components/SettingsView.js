@@ -3,11 +3,11 @@ import { chromeApi } from '../services/chromeApi';
 import Button from './common/Button';
 
 const PRESETS = {
-  free: {
+  openrouter: {
     provider: 'openrouter',
     baseUrl: 'https://openrouter.ai/api/v1',
     model: 'google/gemini-2.0-flash-exp:free',
-    label: 'OpenRouter (Free Tier)'
+    label: 'OpenRouter (Official)'
   },
   openai: {
     provider: 'openai',
@@ -24,9 +24,9 @@ const PRESETS = {
 };
 
 const SettingsView = ({ onSaved, onCancel, isFirstSetup }) => {
-  const [provider, setProvider] = useState('free');
-  const [baseUrl, setBaseUrl] = useState(PRESETS.free.baseUrl);
-  const [model, setModel] = useState(PRESETS.free.model);
+  const [provider, setProvider] = useState('openrouter');
+  const [baseUrl, setBaseUrl] = useState(PRESETS.openrouter.baseUrl);
+  const [model, setModel] = useState(PRESETS.openrouter.model);
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -75,7 +75,7 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup }) => {
           onChange={(e) => handleProviderChange(e.target.value)}
           className="settings-select"
         >
-          <option value="free">OpenRouter (Free Tier)</option>
+          <option value="openrouter">OpenRouter</option>
           <option value="openai">OpenAI</option>
           <option value="custom">Custom (Any Compatible API)</option>
         </select>
@@ -111,14 +111,14 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup }) => {
           placeholder="sk-..."
           className="settings-input"
         />
-        {provider === 'free' && (
+        {provider === 'openrouter' && (
           <p className="settings-hint">
             Get a free key at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai</a>
           </p>
         )}
       </div>
 
-      {provider === 'free' && (
+      {model.toLowerCase().includes('free') && (
         <div className="free-tier-notice">
           ⚠️ <strong>Note:</strong> Free models may experience latency or rate limits. Data logging must be enabled in OpenRouter settings.
         </div>

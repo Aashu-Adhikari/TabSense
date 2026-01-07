@@ -36,7 +36,12 @@ function App() {
     clearSearch
   } = useSearch();
 
-  const { mlInitialized, initializing: mlInitializing } = useMlClassification();
+  // Remove useMlClassification from unconditional call - only load when needed
+  // const { mlInitialized, initializing: mlInitializing } = useMlClassification();
+  
+  // ML state - lazily initialized
+  const [mlInitialized, setMlInitialized] = useState(false);
+  const [mlInitializing, setMlInitializing] = useState(false);
 
   const [expandedGroups, setExpandedGroups] = useState(new Set());
   const [renamingGroup, setRenamingGroup] = useState(null);
@@ -68,6 +73,7 @@ function App() {
       return;
     }
 
+    // Import chromeApi early for ML initialization
     const { chromeApi } = await import('../services/chromeApi');
     event.target.value = "";
 
@@ -75,6 +81,13 @@ function App() {
       const categoryLabel = value.replace('ml_category--', '');
       const category = mlCategories.find(c => c.label === categoryLabel);
       if (category) {
+        // Lazy initialize ML if not ready
+        if (!mlInitialized) {
+          setMlInitializing(true);
+          await chromeApi.initializeML();
+          setMlInitialized(true);
+          setMlInitializing(false);
+        }
         await chromeApi.findOrCreateGroupAndAddTab(tab.id, category.label, category.emoji);
         await chromeApi.learnFromAssignment(tab, category.label);
         fetchGroupsAndTabs();
@@ -124,7 +137,16 @@ function App() {
       switch (groupingMethod) {
         case 'domain': response = await chromeApi.groupByDomain(); break;
         case 'content': response = await chromeApi.groupByContent(); break;
-        case 'ai': response = await chromeApi.mlAutoGroupAllTabs({ confidenceThreshold: 0.6, minGroupSize: 2, maxGroups: 10 }); break;
+        case 'ai': 
+          // Lazy initialize ML if not ready
+          if (!mlInitialized) {
+            setMlInitializing(true);
+            await chromeApi.initializeML();
+            setMlInitialized(true);
+            setMlInitializing(false);
+          }
+          response = await chromeApi.mlAutoGroupAllTabs({ confidenceThreshold: 0.6, minGroupSize: 2, maxGroups: 10 }); 
+          break;
         default: response = await chromeApi.groupByDomain();
       }
       if (response && response.success) {
@@ -148,7 +170,7 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchTerm, clearSearch]);
 
-  const loading = groupsLoading || mlInitializing;
+  const loading = groupsLoading;
 
   // View Switching Logic
   if (activeChatTab) {
@@ -270,18 +292,18 @@ function App() {
                   >
                     <option value="domain">🌐 Domain Grouping</option>
                     <option value="content">📋 Content Grouping</option>
-                    <option value="ai" disabled={!mlInitialized}>🤖 AI Grouping</option>
+                    <option value="ai">🤖 AI Grouping</option>
                   </select>
                 </div>
                 
                 <Button
                   variant="primary"
                   onClick={handleGroupTabs}
-                  disabled={isGrouping || (groupingMethod === 'ai' && !mlInitialized)}
-                  loading={isGrouping}
+                  disabled={isGrouping || mlInitializing}
+                  loading={isGrouping || mlInitializing}
                   fullWidth
                 >
-                  {isGrouping ? 'Grouping...' : `Group Tabs`}
+                  {mlInitializing ? 'Initializing AI...' : isGrouping ? 'Grouping...' : `Group Tabs`}
                 </Button>
               </div>
             )}
