@@ -229,15 +229,15 @@ class TabClassifier {
     const url = tabUrl.toLowerCase();
     
     const rules = [
-      { pattern: /github|gitlab|stack overflow|code|api|docs?\./, category: 'Code & Development' },
-      { pattern: /docs?|documentation|tutorial|guide|reference/, category: 'Documentation' },
-      { pattern: /twitter|facebook|instagram|reddit|social/, category: 'Social Media' },
-      { pattern: /amazon|shop|buy|cart|checkout|ebay/, category: 'Shopping' },
-      { pattern: /news|article|blog|medium|substack/, category: 'News & Articles' },
-      { pattern: /youtube|watch|video|stream|netflix/, category: 'Video & Entertainment' },
-      { pattern: /notion|drive|dropbox|calendar|meet|zoom/, category: 'Productivity & Tools' },
-      { pattern: /mail|gmail|outlook|email|inbox/, category: 'Email & Communication' },
-      { pattern: /chatgpt|openai|claude|ai|llm|machine learning/, category: 'AI & Machine Learning' }
+      { pattern: /\b(github|gitlab|stackoverflow|code|api)\b/i, category: 'Code & Development' },
+      { pattern: /\b(docs?|documentation|tutorial|guide|reference)\b/i, category: 'Documentation' },
+      { pattern: /\b(twitter|facebook|instagram|reddit|social)\b/i, category: 'Social Media' },
+      { pattern: /\b(amazon|shop|buy|cart|checkout|ebay)\b/i, category: 'Shopping' },
+      { pattern: /\b(news|article|blog|medium|substack)\b/i, category: 'News & Articles' },
+      { pattern: /\b(youtube|watch|video|stream|netflix)\b/i, category: 'Video & Entertainment' },
+      { pattern: /\b(notion|drive|dropbox|calendar|meet|zoom)\b/i, category: 'Productivity & Tools' },
+      { pattern: /\b(mail|gmail|outlook|email|inbox)\b/i, category: 'Email & Communication' },
+      { pattern: /\b(chatgpt|openai|claude|llm|machine learning)\b/i, category: 'AI & Machine Learning' }
     ];
     
     for (const rule of rules) {

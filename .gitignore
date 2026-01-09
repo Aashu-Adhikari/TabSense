@@ -77,3 +77,40 @@ stats.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+
+# Jest and Test Results
+test-results/
+*.test.js
+!tests/**/*.test.js
+tests/
+
+# Babel cache
+.babelcache
+babel.config.json
+
+# Webpack cache
+.webpack/
+.cache/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Chrome Extension temporary files
+extension/
+*.zip
+
+# Bundle analysis
+bundle-report.html
+
+# Security - never commit package-lock.json if using yarn/pnpm
+# package-lock.json  # Uncomment if using yarn/pnpm
+
+# Test coverage (already covered but强调)
+htmlcov/
+
+combined_code.txt
+jest.config.js
+playwright.config.js
+.github
+
