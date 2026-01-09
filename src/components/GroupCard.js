@@ -8,6 +8,7 @@ const GroupCard = ({
   onUngroupSingleTab, 
   onUngroupAll, 
   onStartRename, 
+  onRename,
   onOpenTab 
 }) => {
   const [renamingGroup, setRenamingGroup] = useState(null);
@@ -20,8 +21,8 @@ const GroupCard = ({
   };
 
   const handleSaveName = () => {
-    if (newGroupName.trim()) {
-      // The rename logic will be handled by the parent component
+    if (newGroupName.trim() && onRename) {
+      onRename(group.id, newGroupName);
       setRenamingGroup(null);
       setNewGroupName('');
     }

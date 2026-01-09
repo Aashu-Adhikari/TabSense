@@ -99,6 +99,12 @@ chrome.runtime.onInstalled.addListener(updateTabCache);
 // ===== ML INITIALIZATION =========================================
 // =================================================================
 
+// THIS WAS MISSING. It is required for the Chat Stream to work.
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'chat_stream') {
+    chatHandlers.handleChatStreamConnection(port);
+  }
+});
 
 
 // =================================================================
@@ -194,25 +200,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "SEND_CHAT_MESSAGE") {
-    return chatHandlers.handleSendChatMessage(request, sendResponse);
+    return chatHandlers.handleChatStreamConnection(request, sendResponse);
   }
 
-  // if (request.action === "SAVE_API_KEY") {
-  //   return chatHandlers.handleSaveApiKey(request, sendResponse);
-  // }
-
-  // if (request.action === "CHECK_API_KEY") {
-  //   return chatHandlers.handleGetApiKey(request, sendResponse);
-  // }
-
-  // --- Chat Handlers ---
-  if (request.action === "EXTRACT_TAB_CONTENT") {
-    return chatHandlers.handleExtractTabContent(request, sendResponse);
-  }
-  if (request.action === "SEND_CHAT_MESSAGE") {
-    return chatHandlers.handleSendChatMessage(request, sendResponse);
-  }
-  
   // UPDATED HANDLERS
   if (request.action === "SAVE_LLM_CONFIG") {
     return chatHandlers.handleSaveLLMConfig(request, sendResponse);

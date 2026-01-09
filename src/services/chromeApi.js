@@ -182,32 +182,7 @@ class ChromeApiService {
     });
   }
 
-  async sendChatMessage(messages, context) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "SEND_CHAT_MESSAGE", messages, context }, resolve);
-    });
-  }
-
-  // async saveApiKey(apiKey) {
-  //   return new Promise((resolve) => {
-  //     chrome.runtime.sendMessage({ action: "SAVE_API_KEY", apiKey }, resolve);
-  //   });
-  // }
-
-  // async checkApiKey() {
-  //   return new Promise((resolve) => {
-  //     chrome.runtime.sendMessage({ action: "CHECK_API_KEY" }, resolve);
-  //   });
-  // }
-
-// ... existing methods ...
-
-  // ===== CHAT & CONFIG METHODS =====
-  async extractTabContent(tabId) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "EXTRACT_TAB_CONTENT", tabId }, resolve);
-    });
-  }
+  
 
   async sendChatMessage(messages, context) {
     return new Promise((resolve) => {
@@ -228,6 +203,21 @@ class ChromeApiService {
       chrome.runtime.sendMessage({ action: "GET_LLM_CONFIG" }, resolve);
     });
   }
+
+  connectChatStream(messages, context, callbacks) {
+      const { onChunk, onEnd, onError } = callbacks;
+      const port = chrome.runtime.connect({ name: 'chat_stream' });
+
+      port.postMessage({ messages, context });
+
+      port.onMessage.addListener((msg) => {
+        if (msg.type === 'chunk') onChunk(msg.text);
+        else if (msg.type === 'end') { onEnd(); port.disconnect(); }
+        else if (msg.type === 'error') { onError(msg.text); port.disconnect(); }
+      });
+
+      return () => port.disconnect();
+    }
 
 }
 

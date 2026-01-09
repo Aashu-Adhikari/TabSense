@@ -121,9 +121,9 @@ function App() {
     setNewGroupName(currentName);
   };
 
-  const saveGroupName = (groupId) => {
-    if (!newGroupName.trim()) return;
-    handleRenameGroup(groupId, newGroupName);
+  const saveGroupName = (groupId, newName) => {
+    if (!newName.trim()) return;
+    handleRenameGroup(groupId, newName);
     setRenamingGroup(null);
     setNewGroupName('');
   };
@@ -267,6 +267,7 @@ function App() {
                     onUngroupSingleTab={handleUngroupSingleTab}
                     onUngroupAll={handleUngroupAll}
                     onStartRename={handleStartRename}
+                    onRename={saveGroupName}
                     onOpenTab={handleOpenTab}
                   />
                 ))

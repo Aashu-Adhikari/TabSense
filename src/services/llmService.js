@@ -46,7 +46,8 @@ class LLMService {
       model: config.model,
       messages: [systemPrompt, ...messages],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 5000,
+      stream: true,
       // OpenRouter specific header to prevent caching issues
       provider: { ignore: ["False"] }
     };
@@ -75,8 +76,10 @@ class LLMService {
         throw new Error(errorData.error?.message || `API Error: ${response.status}`);
       }
 
-      const data = await response.json();
-      return data.choices[0].message.content;
+      // const data = await response.json();
+      // return data.choices[0].message.content;
+      return response.body; 
+      
     } catch (error) {
       console.error('LLM Service Error:', error);
       throw error;
