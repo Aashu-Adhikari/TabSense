@@ -198,6 +198,7 @@ function App() {
         <h1>
           <img src="icons/icon48.png" alt="Logo" className="header-logo" />
           TabSense
+          <span className="beta-badge">BETA</span>
         </h1>
             <p className="subtitle">Organize. Search. Chat.</p>
           </header>
@@ -361,7 +362,7 @@ function App() {
       </main>
 
       <footer className="popup-footer">
-        <Button variant="secondary" onClick={fetchGroupsAndTabs}>🔄 Refresh</Button>
+         <Button variant="primary" onClick={fetchGroupsAndTabs}>🔄 Refresh</Button>
       </footer>
     </div>
   );

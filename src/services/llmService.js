@@ -9,9 +9,15 @@ export const DEFAULT_MODEL = {
 
 class LLMService {
   async getConfig() {
-    const result = await chrome.storage.local.get(['llm_settings']);
-    // Merge with defaults to ensure we always have fields
-    return { ...DEFAULT_MODEL, ...result.llm_settings };
+    try {
+      const result = await chrome.storage.local.get(['llm_settings']);
+      // Merge with defaults to ensure we always have fields
+      return { ...DEFAULT_MODEL, ...result.llm_settings };
+    } catch (error) {
+      console.error('Storage error:', error);
+      // Return default config on error
+      return DEFAULT_MODEL;
+    }
   }
 
   async validateKey(apiKey) {

@@ -1,22 +1,33 @@
 /* ============================================= */
 /* ===== BASE & LAYOUT STYLES ===== */
 /* ============================================= */
+/* body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+} */
+
 
 .popup-container {
   width: 420px;
-  max-height: 600px;
+  height: 580px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #f8fafc;
   color: #1e293b;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .popup-header {
   padding: 1.25rem;
   border-bottom: 1px solid #e2e8f0;
   background: white;
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevents header from squishing */
+  z-index: 10; 
 }
 
 .popup-header h1 {
@@ -33,6 +44,20 @@
   object-fit: contain;
 }
 
+.beta-badge {
+  font-size: 0.6rem;
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-left: 8px;
+  vertical-align: middle;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  transform: translateY(-2px); /* Slight lift */
+}
+
 .subtitle {
   margin: 0.25rem 0 0;
   color: #64748b;
@@ -41,17 +66,19 @@
 
 .popup-main {
   padding: 1rem;
-  overflow-y: auto;
-  flex: 1;
+  overflow-y: auto; /* Adds scrollbar ONLY to this section */
+  flex-grow: 1;     /* Takes up all available space between header and footer */
+  height: 0;        /* Trick to force flexbox scrolling to work correctly */
 }
 
 .popup-footer {
   padding: 1rem;
   border-top: 1px solid #e2e8f0;
   background: white;
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevents footer from squishing */
   display: flex;
-  justify-content: center; /* Centering the refresh button */
+  justify-content: center;
+  z-index: 10;    /* Keeps it above scrolling content */
 }
 
 /* ============================================= */
