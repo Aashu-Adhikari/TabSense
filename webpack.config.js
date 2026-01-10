@@ -2,6 +2,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin'); // <--- 1. NEW IMPORT
 
 module.exports = (env, argv) => {
   const isDevelopment = argv.mode === 'development';
@@ -12,7 +13,6 @@ module.exports = (env, argv) => {
       popup: './src/popup/index.js',
       background: './src/background/background.js',
       content: './src/content/content.js' 
-      // REMOVED: scraper entry. We don't want to bundle it.
     },
     output: {
       path: path.resolve(__dirname, 'build'),
@@ -20,6 +20,27 @@ module.exports = (env, argv) => {
       clean: true,
     },
     devtool: isDevelopment ? 'cheap-module-source-map' : false,
+
+    // 2. NEW OPTIMIZATION BLOCK
+    optimization: {
+      minimize: !isDevelopment, // Only minimize in production (npm run build)
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            compress: {
+              // Removes these specific function calls from the code
+              // We keep console.error and console.warn for debugging critical bugs
+              pure_funcs: ['console.log', 'console.info', 'console.debug']
+            },
+            format: {
+              comments: false, // Removes comments from the output
+            },
+          },
+          extractComments: false, // Prevents creating a separate LICENSE.txt file
+        }),
+      ],
+    },
+
     module: {
       rules: [
         {
@@ -52,8 +73,7 @@ module.exports = (env, argv) => {
         patterns: [
           { from: "src/manifest.json", to: "manifest.json" },
           { from: "src/ml/pretrained-model", to: "ml/pretrained-model" },
-          // ADD THIS LINE: Copy the scraper raw to the build root
-          { from: "src/content/scraper.js", to: "scraper.js" } 
+          { from: "public/icons", to: "icons", noErrorOnMissing: true } 
         ]
       })
     ],

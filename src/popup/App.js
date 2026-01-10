@@ -193,10 +193,16 @@ function App() {
 
   return (
     <div className="popup-container">
-      <header className="popup-header">
-        <h1>🪄 TabSynth</h1>
-        <p className="subtitle">Smart Tab Groups</p>
-      </header>
+    
+    <header className="popup-header">
+        <h1>
+          <img src="icons/icon48.png" alt="Logo" className="header-logo" />
+          TabSense
+        </h1>
+            <p className="subtitle">Organize. Search. Chat.</p>
+          </header>
+
+  
 
       {currentTab && (
         <div style={{ padding: '1rem 1rem 0' }}>

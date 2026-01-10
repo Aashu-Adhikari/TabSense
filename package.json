@@ -1,7 +1,7 @@
 {
-  "name": "tabsynth",
+  "name": "tabsense",
   "version": "1.0.0",
-  "description": "AI-powered tab manager",
+  "description": "AI-powered tab organizer and chat assistant",
   "scripts": {
     "build": "webpack --mode=production",
     "watch": "webpack --mode=development --watch",

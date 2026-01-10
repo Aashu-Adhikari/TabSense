@@ -22,7 +22,15 @@
 .popup-header h1 {
   margin: 0;
   font-size: 1.5rem;
-  gap: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Space between logo and text */
+}
+
+.header-logo {
+  width: 28px;       /* Adjust size to match text height */
+  height: 28px;
+  object-fit: contain;
 }
 
 .subtitle {
