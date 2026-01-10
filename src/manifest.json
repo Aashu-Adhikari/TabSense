@@ -7,7 +7,7 @@
     "default_popup": "popup.html",
     "default_title": "TabSynth"
   },
-    "icons": {
+  "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
@@ -28,7 +28,7 @@
     {
       "resources": [
         "ml/pretrained-model/model.json",
-        "ml/pretrained-model/group1-shard1of1.bin"
+        "ml/pretrained-model/weights.bin"
       ],
       "matches": [
         "<all_urls>"

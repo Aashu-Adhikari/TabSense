@@ -7,7 +7,7 @@ import { getGroupColor } from '../utils/groupingAlgorithms.js';
 // =================================================================
 
 const USER_TRAINING_DATA_KEY = 'userGeneratedTrainingData';
-const TRAINING_THRESHOLD = 50; // Trigger retraining after collecting 10 new examples.
+const TRAINING_THRESHOLD = 15; // Trigger retraining after collecting 10 new examples.
 
 let isTrainingInProgress = false;
 

@@ -11,6 +11,11 @@ This document analyzes the current test suite for TabSense, focusing on what is 
 - **Edge Cases**: Empty storage, missing keys, null/undefined/short API keys.
 - **Error Handling**: Gracefully handles `chrome.storage` failures by reverting to default configuration.
 
+## 2. Build & Manifest Verification
+**Findings:**
+- **Critical Issue Fixed**: `manifest.json` referenced a non-existent model weight file (`group1-shard1of1.bin`). It has been updated to point to the correct `weights.bin` file found in the build artifacts.
+- **Build Success**: `npm run build` completes successfully and produces valid assets.
+
 ### `src/utils/uiUtils.js`
 **Covered:**
 - **Functionality**: URL truncation, emoji mapping, favicon generation.
@@ -40,6 +45,7 @@ This document analyzes the current test suite for TabSense, focusing on what is 
 - **Input Sanitization**: UI utilities safely handle malformed URLs and unknown category labels without crashing the UI.
 - **Basic ML Initialization**: The classifier can initialize its dependencies (mocked).
 - **Fallback Logic**: If the ML model isn't ready, the rule-based classifier works correctly.
+- **ML Model Failure**: Confirmed that if `model.predict` throws an error, the system gracefully falls back to rule-based classification.
 
 ### ❌ Not Possible (Gaps / Not Tested)
 - **Real ML Inference**: The actual neural network prediction is mocked. We don't know if the real model weights load correctly or if the tensor shapes are correct in the production build.
@@ -47,7 +53,6 @@ This document analyzes the current test suite for TabSense, focusing on what is 
     - **Popup Rendering**: We haven't tested if the React popup actually renders in the extension context.
     - **Background Script Communication**: We haven't verified that `chrome.runtime.sendMessage` actually reaches the background script listeners.
 - **Complex Error Scenarios**:
-    - **ML Model Crash**: What if `tf.predict` throws an out-of-memory error? This is not tested.
     - **Chrome API Failures**: What if `chrome.runtime.lastError` is set during a message send? The current wrappers might hang or reject, but this behavior isn't fully verified.
 - **State Persistence**: We verify `saveModelWeights` logic in code, but don't test if data actually persists across browser restarts.
 
