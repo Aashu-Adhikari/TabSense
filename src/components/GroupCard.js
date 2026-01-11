@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { getColorEmoji } from '../utils/uiUtils';
 
-const GroupCard = ({ 
-  group, 
-  expanded, 
-  onToggle, 
-  onUngroupSingleTab, 
-  onUngroupAll, 
-  onStartRename, 
+const GroupCard = ({
+  group,
+  expanded,
+  onToggle,
+  onUngroupSingleTab,
+  onUngroupAll,
+  onStartRename,
   onRename,
-  onOpenTab 
+  onOpenTab
 }) => {
   const [renamingGroup, setRenamingGroup] = useState(null);
   const [newGroupName, setNewGroupName] = useState('');
@@ -65,13 +65,13 @@ const GroupCard = ({
           <span className="group-toggle">{expanded ? '▼' : '▶'}</span>
         </div>
       </div>
-      
+
       {expanded && (
         <div className="group-content">
           <div className="group-tabs-list">
             {group.tabs.map(tab => (
-              <div 
-                key={tab.id} 
+              <div
+                key={tab.id}
                 className="group-tab-item clickable-tab"
                 onClick={(e) => {
                   if (!e.target.closest('.ungroup-single-btn')) {
@@ -80,10 +80,10 @@ const GroupCard = ({
                 }}
                 title="Click to open tab"
               >
-                <img 
-                  src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMHAgMSAxIDAgMCAxIDEgMXoiIGZpbGw9IiM2NjY2NjYiLz48L3N2Zz4='} 
-                  alt="Favicon" 
-                  className="tab-favicon" 
+                <img
+                  src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMGExIDEgMCAwIDEgMSAxeiIgZmlsbD0iIzY2NjY2NiIvPjwvc3ZnPg=='}
+                  alt="Favicon"
+                  className="tab-favicon"
                 />
                 <div className="group-tab-info">
                   <div className="group-tab-title" title={tab.title}>
@@ -106,7 +106,7 @@ const GroupCard = ({
               </div>
             ))}
           </div>
-          
+
           <div className="group-actions">
             <button
               className="group-action-btn rename-btn"

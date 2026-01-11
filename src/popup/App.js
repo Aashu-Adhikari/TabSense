@@ -38,7 +38,7 @@ function App() {
 
   // Remove useMlClassification from unconditional call - only load when needed
   // const { mlInitialized, initializing: mlInitializing } = useMlClassification();
-  
+
   // ML state - lazily initialized
   const [mlInitialized, setMlInitialized] = useState(false);
   const [mlInitializing, setMlInitializing] = useState(false);
@@ -65,7 +65,7 @@ function App() {
   const handleAssignTabToCategory = async (tab, event) => {
     const { value } = event.target;
     if (!value) return;
-    
+
     // ===== NEW: Handle Custom Group Creation =====
     if (value === 'create_custom') {
       event.target.value = ""; // Reset dropdown
@@ -137,7 +137,7 @@ function App() {
       switch (groupingMethod) {
         case 'domain': response = await chromeApi.groupByDomain(); break;
         case 'content': response = await chromeApi.groupByContent(); break;
-        case 'ai': 
+        case 'ai':
           // Lazy initialize ML if not ready
           if (!mlInitialized) {
             setMlInitializing(true);
@@ -145,7 +145,7 @@ function App() {
             setMlInitialized(true);
             setMlInitializing(false);
           }
-          response = await chromeApi.mlAutoGroupAllTabs({ confidenceThreshold: 0.6, minGroupSize: 2, maxGroups: 10 }); 
+          response = await chromeApi.mlAutoGroupAllTabs({ confidenceThreshold: 0.6, minGroupSize: 2, maxGroups: 10 });
           break;
         default: response = await chromeApi.groupByDomain();
       }
@@ -180,8 +180,8 @@ function App() {
   // ===== NEW VIEW: Custom Group Creation =====
   if (tabForNewGroup) {
     return (
-      <CreateGroupView 
-        tab={tabForNewGroup} 
+      <CreateGroupView
+        tab={tabForNewGroup}
         onBack={() => setTabForNewGroup(null)}
         onGroupCreated={() => {
           setTabForNewGroup(null);
@@ -193,23 +193,23 @@ function App() {
 
   return (
     <div className="popup-container">
-    
-    <header className="popup-header">
+
+      <header className="popup-header">
         <h1>
           <img src="icons/icon48.png" alt="Logo" className="header-logo" />
           TabSense
           <span className="beta-badge">BETA</span>
         </h1>
-            <p className="subtitle">Organize. Search. Chat.</p>
-          </header>
+        <p className="subtitle">Organize. Search. Chat.</p>
+      </header>
 
-  
+
 
       {currentTab && (
         <div style={{ padding: '1rem 1rem 0' }}>
-          <Button 
-            variant="primary" 
-            fullWidth 
+          <Button
+            variant="primary"
+            fullWidth
             icon="🤖"
             onClick={() => setActiveChatTab(currentTab)}
           >
@@ -262,7 +262,7 @@ function App() {
                 </Button>
               )}
             </div>
-            
+
             <div className="groups-list">
               {groups.length > 0 ? (
                 groups.map(group => (
@@ -286,7 +286,7 @@ function App() {
             <div className="section-header">
               <h2>Ungrouped Tabs <span className="count-badge">{ungroupedTabs.length}</span></h2>
             </div>
-            
+
             {ungroupedTabs.length >= 2 && (
               <div className="grouping-controls">
                 {/* ... Grouping controls (unchanged) ... */}
@@ -303,7 +303,7 @@ function App() {
                     <option value="ai">🤖 AI Grouping</option>
                   </select>
                 </div>
-                
+
                 <Button
                   variant="primary"
                   onClick={handleGroupTabs}
@@ -315,31 +315,31 @@ function App() {
                 </Button>
               </div>
             )}
-            
+
             <div className="ungrouped-tabs-list">
               {ungroupedTabs.map(tab => (
-                <div 
-                  key={tab.id} 
+                <div
+                  key={tab.id}
                   className="ungrouped-tab-item clickable-tab"
                   onClick={(e) => {
                     if (!e.target.closest('.group-select')) handleOpenTab(tab.id, tab.windowId);
                   }}
                 >
-                  <img src={tab.favIconUrl || 'data:image/svg+xml;base64,...'} className="tab-favicon" />
+                  <img src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMGExIDEgMCAwIDEgMSAxeiIgZmlsbD0iIzY2NjY2NiIvPjwvc3ZnPg=='} className="tab-favicon" />
                   <div className="ungrouped-tab-info">
                     <div className="ungrouped-tab-title">{tab.title}</div>
                     <div className="ungrouped-tab-url">{tab.url}</div>
                   </div>
                   <div className="ungrouped-tab-actions">
-                    <select 
+                    <select
                       className="group-select"
                       onChange={(e) => handleAssignTabToCategory(tab, e)}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <option value="">➕ Add to...</option>
-                      
+
                       {/* ===== NEW OPTION ===== */}
-                      <option value="create_custom" style={{fontWeight: 'bold', color: '#3b82f6'}}>
+                      <option value="create_custom" style={{ fontWeight: 'bold', color: '#3b82f6' }}>
                         ✨ Create New Group...
                       </option>
                       {/* ====================== */}
@@ -362,7 +362,7 @@ function App() {
       </main>
 
       <footer className="popup-footer">
-         <Button variant="primary" onClick={fetchGroupsAndTabs}>🔄 Refresh</Button>
+        <Button variant="primary" onClick={fetchGroupsAndTabs}>🔄 Refresh</Button>
       </footer>
     </div>
   );

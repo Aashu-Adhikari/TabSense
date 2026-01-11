@@ -19,10 +19,8 @@
     "tabs",
     "tabGroups",
     "storage",
-    "scripting"
-  ],
-  "host_permissions": [
-    "<all_urls>"
+    "scripting",
+    "activeTab"
   ],
   "web_accessible_resources": [
     {

@@ -1,14 +1,14 @@
 import React from 'react';
 import { truncateUrl } from '../utils/uiUtils';
 
-const SearchResultsView = ({ 
-  searchResults, 
-  searchLoading, 
+const SearchResultsView = ({
+  searchResults,
+  searchLoading,
   searchTerm,
   onClearSearch,
   onAddToGroup,
   groups,
-  onOpenTab 
+  onOpenTab
 }) => {
   if (!searchResults || searchLoading) {
     return searchLoading ? (
@@ -20,7 +20,7 @@ const SearchResultsView = ({
 
   const highlightText = (text) => {
     if (!searchTerm.trim()) return text;
-    
+
     const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
     return parts.map((part, index) =>
       part.toLowerCase() === searchTerm.toLowerCase() ? (
@@ -40,7 +40,7 @@ const SearchResultsView = ({
             {allResults.length} match{allResults.length !== 1 ? 'es' : ''}
           </span>
         </h3>
-        <button 
+        <button
           className="clear-search-btn"
           onClick={onClearSearch}
         >
@@ -58,16 +58,16 @@ const SearchResultsView = ({
             {groupedResults.map(tab => {
               const group = groups.find(g => g.tabs.some(gt => gt.id === tab.id));
               return (
-                <div 
-                  key={tab.id} 
+                <div
+                  key={tab.id}
                   className="search-tab-item clickable-tab"
                   onClick={() => onOpenTab(tab.id, tab.windowId)}
                   title="Click to open tab"
                 >
-                  <img 
-                    src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMHAgMSAxIDAgMCAxIDEgMXoiIGZpbGw9IiM2NjY2NjYiLz48L3N2Zz4='} 
-                    alt="Favicon" 
-                    className="search-tab-favicon" 
+                  <img
+                    src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMGExIDEgMCAwIDEgMSAxeiIgZmlsbD0iIzY2NjY2NiIvPjwvc3ZnPg=='}
+                    alt="Favicon"
+                    className="search-tab-favicon"
                   />
                   <div className="search-tab-info">
                     <div className="search-tab-title">
@@ -99,16 +99,16 @@ const SearchResultsView = ({
           </div>
           <div className="search-tabs-list">
             {ungroupedResults.map(tab => (
-              <div 
-                key={tab.id} 
+              <div
+                key={tab.id}
                 className="search-tab-item clickable-tab"
                 onClick={() => onOpenTab(tab.id, tab.windowId)}
                 title="Click to open tab"
               >
-                <img 
-                  src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMHAgMSAxIDAgMCAxIDEgMXoiIGZpbGw9IiM2NjY2NjYiLz48L3N2Zz4='} 
-                  alt="Favicon" 
-                  className="search-tab-favicon" 
+                <img
+                  src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMGExIDEgMCAwIDEgMSAxeiIgZmlsbD0iIzY2NjY2NiIvPjwvc3ZnPg=='}
+                  alt="Favicon"
+                  className="search-tab-favicon"
                 />
                 <div className="search-tab-info">
                   <div className="search-tab-title">
@@ -121,7 +121,7 @@ const SearchResultsView = ({
                   </div>
                 </div>
                 {groups.length > 0 && (
-                  <select 
+                  <select
                     className="search-group-select"
                     onChange={(e) => {
                       if (e.target.value) {
