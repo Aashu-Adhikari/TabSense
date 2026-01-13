@@ -111,14 +111,14 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup }) => {
           placeholder="sk-..."
           className="settings-input"
         />
-        {provider === 'free' && (
+        {model.toLowerCase().includes('free') && (
           <p className="settings-hint">
             Get a free key at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai</a>
           </p>
         )}
       </div>
 
-      {provider === 'free' && (
+      {model.toLowerCase().includes('free') && (
         <div className="free-tier-notice">
           ⚠️ <strong>Note:</strong> Free models may experience latency or rate limits. Data logging must be enabled in OpenRouter settings.
         </div>

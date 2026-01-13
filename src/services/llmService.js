@@ -1,17 +1,17 @@
 // src/services/llmService.js
 
-export const DEFAULT_FREE_CONFIG = {
+export const DEFAULT_MODEL = {
   provider: 'openrouter',
   baseUrl: 'https://openrouter.ai/api/v1',
-  apiKey: '', 
-  model: 'google/gemini-2.0-flash-exp:free'
+  apiKey: '', // User must provide their own API key
+  model: '' // User selects their preferred model
 };
 
 class LLMService {
   // Helper to get the full configuration object
   async getConfig() {
     const result = await chrome.storage.local.get(['llm_settings']);
-    return { ...DEFAULT_FREE_CONFIG, ...result.llm_settings };
+    return { ...DEFAULT_MODEL, ...result.llm_settings };
   }
 
   async validateKey(apiKey) {
@@ -51,7 +51,7 @@ class LLMService {
       model: config.model,
       messages: [systemPrompt, ...messages],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 5000,
       stream: true, // Enable streaming
       provider: { ignore: ["False"] }
     };
@@ -71,7 +71,7 @@ class LLMService {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         if (errorData.error?.message?.includes('data policy')) {
-          throw new Error('Please enable "Data Logging" in your OpenRouter privacy settings.');
+          throw new Error('Please enable "Data Logging" in your LLM Provider privacy settings.');
         }
         throw new Error(errorData.error?.message || `API Error: ${response.status}`);
       }
