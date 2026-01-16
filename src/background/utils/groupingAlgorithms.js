@@ -1,8 +1,8 @@
 // Grouping algorithms for tab organization
 
-export function groupTabsByDomain(tabs) {
+export function groupTabsByDomain(tabs, domainSettings = {}) {
   const groups = {};
-  
+
   tabs.forEach(tab => {
     try {
       const domain = new URL(tab.url).hostname.replace('www.', '');
@@ -10,7 +10,7 @@ export function groupTabsByDomain(tabs) {
         groups[domain] = {
           tabIds: [],
           tabs: [],
-          suggestedName: getFriendlyDomainName(domain),
+          suggestedName: getFriendlyDomainName(domain, domainSettings),
           confidence: 'high',
           type: 'domain'
         };
@@ -32,7 +32,7 @@ export function groupTabsByDomain(tabs) {
       groups[key].tabs.push(tab);
     }
   });
-  
+
   return Object.values(groups).filter(group => group.tabIds.length > 1);
 }
 
@@ -49,14 +49,14 @@ export function groupTabsByContent(tabs) {
     { pattern: /notion|drive|dropbox|cloud|storage/i, category: 'Cloud Storage', emoji: '☁️' },
     { pattern: /calendar|meeting|event|schedule|zoom|meet/i, category: 'Meetings & Calendar', emoji: '📅' }
   ];
-  
+
   const groups = {};
   const uncategorized = [];
-  
+
   tabs.forEach(tab => {
     let categorized = false;
     const title = tab.title.toLowerCase();
-    
+
     for (const { pattern, category, emoji } of contentPatterns) {
       if (pattern.test(title) || pattern.test(tab.url.toLowerCase())) {
         const key = category;
@@ -75,12 +75,12 @@ export function groupTabsByContent(tabs) {
         break;
       }
     }
-    
+
     if (!categorized) {
       uncategorized.push(tab);
     }
   });
-  
+
   if (uncategorized.length >= 2) {
     groups['uncategorized'] = {
       tabIds: uncategorized.map(t => t.id),
@@ -90,25 +90,25 @@ export function groupTabsByContent(tabs) {
       type: 'general'
     };
   }
-  
+
   return Object.values(groups).filter(group => group.tabIds.length > 1);
 }
 
 export function mergeGroupingStrategies(domainGroups, contentGroups) {
   const merged = [...contentGroups];
-  
+
   domainGroups.forEach(domainGroup => {
     const domainTabIds = new Set(domainGroup.tabIds);
-    
-    const alreadyGrouped = merged.some(contentGroup => 
+
+    const alreadyGrouped = merged.some(contentGroup =>
       contentGroup.tabIds.some(id => domainTabIds.has(id))
     );
-    
+
     if (!alreadyGrouped && domainGroup.tabIds.length >= 2) {
       merged.push(domainGroup);
     }
   });
-  
+
   return merged;
 }
 
@@ -117,10 +117,10 @@ export function createTabGroups(groups, callback) {
     callback({ created: 0, groups: [] });
     return;
   }
-  
+
   const results = [];
   let completed = 0;
-  
+
   groups.forEach((group, index) => {
     setTimeout(() => {
       chrome.tabs.group({ tabIds: group.tabIds }, (groupId) => {
@@ -135,7 +135,7 @@ export function createTabGroups(groups, callback) {
               tabCount: group.tabIds.length,
               type: group.type
             });
-            
+
             completed++;
             if (completed === groups.length) {
               callback({ created: groups.length, groups: results });
@@ -152,30 +152,33 @@ export function createTabGroups(groups, callback) {
   });
 }
 
-function getFriendlyDomainName(domain) {
-  const domainMap = {
-    'github.com': '🐙 GitHub',
-    'docs.github.com': '📘 GitHub Docs',
-    'stackoverflow.com': '🗨️ Stack Overflow',
-    'developer.mozilla.org': '🌐 MDN Web Docs',
-    'docs.google.com': '📊 Google Docs',
-    'notion.so': '📝 Notion',
-    'figma.com': '🎨 Figma',
-    'chat.openai.com': '🤖 ChatGPT',
-    'claude.ai': '📓 Claude',
-    'reddit.com': '👥 Reddit',
-    'twitter.com': '🐦 Twitter',
-    'x.com': '🐦 X (Twitter)',
-    'youtube.com': '🎬 YouTube'
-  };
-  
-  return domainMap[domain] || `🌍 ${domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1)}`;
+function getFriendlyDomainName(domain, domainSettings = {}) {
+  const settings = domainSettings[domain] || {};
+
+  // 1. Use custom name if available
+  if (settings.name) {
+    // If emoji is also set, prepend it
+    if (settings.emoji) {
+      return `${settings.emoji} ${settings.name}`;
+    }
+    // Otherwise use default emoji + custom name
+    return `🌍 ${settings.name}`;
+  }
+
+  // 2. Use custom emoji if available (with default name)
+  const name = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
+  if (settings.emoji) {
+    return `${settings.emoji} ${name}`;
+  }
+
+  // 3. Fallback to default
+  return `🌍 ${name}`;
 }
 
 export function getGroupColor(type) {
   const colorMap = {
     'domain': 'blue',
-    'content': 'green', 
+    'content': 'green',
     'code': 'yellow',
     'docs': 'cyan',
     'social': 'pink',

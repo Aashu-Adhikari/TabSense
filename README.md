@@ -1,6 +1,6 @@
-# Chrome Extension with React (Manifest V3)
+# TabSynth - AI-Powered Tab Manager
 
-A Chrome extension with a React-powered popup UI using Manifest V3.
+An intelligent Chrome extension that uses AI to automatically organize and manage your browser tabs. Features smart grouping, content analysis, and conversational AI for enhanced productivity.
 
 ## Project Structure
 
@@ -18,12 +18,28 @@ A Chrome extension with a React-powered popup UI using Manifest V3.
 
 ## Features
 
-- Manifest V3 compliant
-- React popup UI
-- Background service worker
-- Content scripts for page interaction
-- Webpack bundling with Babel
-- CSS styling
+- **Smart Tab Management**: Organize browser tabs with intelligent grouping
+- **AI-Powered Classification**: Uses machine learning to categorize tabs by content
+- **Automatic Grouping**: Optionally auto-group new tabs as they're opened
+- **Manual Grouping**: Group tabs by domain, content, or AI classification
+- **Chat with Tabs**: Ask questions about webpage content using AI
+- **Customizable Settings**: Configure AI providers, models, and grouping preferences
+- **Manifest V3 compliant**
+- **React popup UI**
+- **Background service worker**
+- **Content scripts for page interaction**
+- **Webpack bundling with Babel**
+- **CSS styling**
+
+### Auto-Grouping Feature
+
+When enabled in settings, new tabs are automatically grouped based on your chosen method:
+
+- **Domain Grouping**: Groups tabs by website domain
+- **Content Grouping**: Groups based on page content analysis
+- **AI Grouping**: Uses machine learning to intelligently categorize tabs
+
+Auto-grouping can be enabled/disabled and configured in the extension settings.
 
 ## Getting Started
 

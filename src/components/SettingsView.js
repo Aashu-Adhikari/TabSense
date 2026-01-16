@@ -30,6 +30,10 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup }) => {
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Auto-grouping settings
+  const [autoGroupingEnabled, setAutoGroupingEnabled] = useState(false);
+  const [autoGroupingMethod, setAutoGroupingMethod] = useState('domain');
+
   // Load existing settings if editing
   useEffect(() => {
     if (!isFirstSetup) {
@@ -40,6 +44,13 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup }) => {
           setModel(res.config.model);
           setApiKey(res.config.apiKey);
         }
+      });
+
+      // Load auto-grouping settings
+      chrome.storage.local.get(['auto_grouping_settings']).then(result => {
+        const settings = result.auto_grouping_settings || {};
+        setAutoGroupingEnabled(settings.enabled || false);
+        setAutoGroupingMethod(settings.method || 'domain');
       });
     }
   }, [isFirstSetup]);
@@ -53,13 +64,21 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup }) => {
   };
 
   const handleSave = async () => {
-    if (!apiKey.trim()) {
-      alert("Please enter an API Key.");
-      return;
-    }
     setLoading(true);
-    const config = { provider, baseUrl, apiKey, model };
-    await chromeApi.saveLLMConfig(config);
+
+    // Save LLM config only if API key is provided (for chat features)
+    if (apiKey.trim()) {
+      const config = { provider, baseUrl, apiKey, model };
+      await chromeApi.saveLLMConfig(config);
+    }
+
+    // Always save auto-grouping settings (works without API key)
+    const autoGroupingSettings = {
+      enabled: autoGroupingEnabled,
+      method: autoGroupingMethod
+    };
+    await chrome.storage.local.set({ auto_grouping_settings: autoGroupingSettings });
+
     setLoading(false);
     onSaved();
   };
@@ -121,6 +140,34 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup }) => {
       {model.toLowerCase().includes('free') && (
         <div className="free-tier-notice">
           ⚠️ <strong>Note:</strong> Free models may experience latency or rate limits. Data logging must be enabled in OpenRouter settings.
+        </div>
+      )}
+
+      <h3>🔄 Auto-Grouping Settings</h3>
+
+      <div className="form-group">
+        <label>
+          <input
+            type="checkbox"
+            checked={autoGroupingEnabled}
+            onChange={(e) => setAutoGroupingEnabled(e.target.checked)}
+          />
+          Enable automatic grouping of new tabs
+        </label>
+      </div>
+
+      {autoGroupingEnabled && (
+        <div className="form-group">
+          <label>Auto-Grouping Method</label>
+          <select
+            value={autoGroupingMethod}
+            onChange={(e) => setAutoGroupingMethod(e.target.value)}
+            className="settings-select"
+          >
+            <option value="domain">🌐 Domain Grouping</option>
+            <option value="content">📋 Content Grouping</option>
+            <option value="ai">🤖 AI Grouping</option>
+          </select>
         </div>
       )}
 

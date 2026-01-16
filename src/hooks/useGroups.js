@@ -1,12 +1,13 @@
-// src/hooks/useGroups.js
 import { useState, useEffect } from 'react';
 import { chromeApi } from '../services/chromeApi';
+import { emojiService } from '../services/emojiService';
 
 export const useGroups = () => {
   const [groups, setGroups] = useState([]);
   const [ungroupedTabs, setUngroupedTabs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [domainSettings, setDomainSettings] = useState({});
 
   const fetchGroupsAndTabs = async () => {
     try {
@@ -19,6 +20,10 @@ export const useGroups = () => {
       const cachedData = await new Promise(resolve => {
         chrome.storage.local.get(['cachedGroups', 'cachedUngroupedTabs'], resolve);
       });
+
+      // Load custom domain settings
+      const settings = await emojiService.getDomainSettings();
+      setDomainSettings(settings);
 
       if (cachedData.cachedGroups && cachedData.cachedUngroupedTabs) {
         console.log('Hook: Loaded data from cache.');
@@ -102,6 +107,44 @@ export const useGroups = () => {
     window.close();
   };
 
+  const handleSaveDomainSetting = async (domain, settings) => {
+    try {
+      await emojiService.setDomainSetting(domain, settings);
+
+      // Update local state
+      const updatedSettings = await emojiService.getDomainSettings();
+      setDomainSettings(updatedSettings);
+
+      // Find active groups that match this domain and update their titles
+      const groupsToUpdate = groups.filter(g => {
+        // Check if group is a single-domain group matching the updated domain
+        const firstHostname = g.tabs.length > 0 ? new URL(g.tabs[0].url).hostname.replace('www.', '') : null;
+        return firstHostname === domain && g.tabs.every(tab => new URL(tab.url).hostname.replace('www.', '') === firstHostname);
+      });
+
+      for (const group of groupsToUpdate) {
+        const currentSettings = updatedSettings[domain] || {};
+        const name = currentSettings.name || domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
+
+        let newTitle;
+        if (currentSettings.emoji) {
+          newTitle = `${currentSettings.emoji} ${name}`;
+        } else {
+          newTitle = `🌍 ${name}`;
+        }
+
+        await chromeApi.renameGroup(group.id, newTitle);
+      }
+
+      // Refresh groups to reflect changes
+      await fetchGroupsAndTabs();
+
+    } catch (err) {
+      console.error('Failed to save domain setting:', err);
+      setError('Failed to save domain setting');
+    }
+  };
+
   useEffect(() => {
     fetchGroupsAndTabs();
   }, []);
@@ -111,11 +154,13 @@ export const useGroups = () => {
     ungroupedTabs,
     loading,
     error,
+    domainSettings,
     fetchGroupsAndTabs,
     handleUngroupSingleTab,
     handleUngroupAll,
     handleRenameGroup,
     handleAddToGroup,
-    handleOpenTab
+    handleOpenTab,
+    handleSaveDomainSetting
   };
 };

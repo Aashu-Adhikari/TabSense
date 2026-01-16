@@ -21,7 +21,9 @@ function App() {
     handleUngroupAll,
     handleRenameGroup,
     handleAddToGroup,
-    handleOpenTab
+    handleOpenTab,
+    domainSettings,
+    handleSaveDomainSetting
   } = useGroups();
 
   const {
@@ -70,14 +72,14 @@ function App() {
 
   const handleMlAutoGroupClick = async () => {
     if (ungroupedTabs.length === 0 || !mlInitialized) return;
-    
+
     try {
       const response = await handleMlAutoGroup(ungroupedTabs, {
         confidenceThreshold: 0.6,
         minGroupSize: 2,
         maxGroups: 10
       });
-      
+
       if (response && response.success) {
         const { groupsCreated, totalTabsGrouped, message } = response;
         alert(`${message}\n\nCheck your browser - the groups are now created and ready to use!`);
@@ -91,7 +93,7 @@ function App() {
 
   const handleSmartGroupAll = async () => {
     if (ungroupedTabs.length < 2) return;
-    
+
     const { chromeApi } = await import('../services/chromeApi');
     await chromeApi.autoGroupTabs();
     fetchGroupsAndTabs();
@@ -138,7 +140,7 @@ function App() {
                 <div className="search-loading-indicator"></div>
               )}
               {searchTerm && (
-                <button 
+                <button
                   className="clear-search-btn"
                   onClick={clearSearch}
                   aria-label="Clear search"
@@ -196,7 +198,7 @@ function App() {
                 </Button>
               )}
             </div>
-            
+
             <div className="groups-list">
               {groups.length > 0 ? (
                 groups.map(group => (
@@ -209,6 +211,8 @@ function App() {
                     onUngroupAll={handleUngroupAll}
                     onStartRename={handleStartRename}
                     onOpenTab={handleOpenTab}
+                    domainSettings={domainSettings}
+                    onSaveDomainSetting={handleSaveDomainSetting}
                   />
                 ))
               ) : (
@@ -221,7 +225,7 @@ function App() {
             {/* Ungrouped Tabs Section */}
             <div className="section-header">
               <h2>
-                Ungrouped Tabs 
+                Ungrouped Tabs
                 <span className="count-badge">
                   {ungroupedTabs.length}
                 </span>
@@ -247,12 +251,12 @@ function App() {
                 )}
               </div>
             </div>
-            
+
             <div className="ungrouped-tabs-list">
               {ungroupedTabs.length > 0 ? (
                 ungroupedTabs.map(tab => (
-                  <div 
-                    key={tab.id} 
+                  <div
+                    key={tab.id}
                     className="ungrouped-tab-item clickable-tab"
                     onClick={(e) => {
                       if (!e.target.closest('.group-select')) {
@@ -261,10 +265,10 @@ function App() {
                     }}
                     title="Click to open tab"
                   >
-                    <img 
-                      src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMHAgMSAxIDAgMCAxIDEgMXoiIGZpbGw9IiM2NjY2NjYiLz48L3N2Zz4='} 
-                      alt="Favicon" 
-                      className="tab-favicon" 
+                    <img
+                      src={tab.favIconUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOCAxLjVhNi41IDYuNSAwIDEgMCAwIDEzIDYuNSA2LjUgMCAwIDAgMC0xM3pNOC41IDV2My4zTDEwLjggOS43YS41LjUgMCAxIDEtLjcuN0w3LjUgOC4yYTEgMSAwIDAgMS0uNS0uOVY1YTEgMSAwIDAgMSAxLTFoMHAgMSAxIDAgMCAxIDEgMXoiIGZpbGw9IiM2NjY2NjYiLz48L3N2Zz4='}
+                      alt="Favicon"
+                      className="tab-favicon"
                     />
                     <div className="ungrouped-tab-info">
                       <div className="ungrouped-tab-title" title={tab.title}>
@@ -274,12 +278,12 @@ function App() {
                         {tab.url}
                       </div>
                     </div>
-                    
+
                     <div className="ungrouped-tab-actions">
                       <span className="tab-window">Win {tab.windowId}</span>
-                      
+
                       {groups.length > 0 && (
-                        <select 
+                        <select
                           className="group-select"
                           onChange={(e) => {
                             if (e.target.value) {
@@ -311,7 +315,7 @@ function App() {
       </main>
 
       <footer className="popup-footer">
-        <Button 
+        <Button
           variant="secondary"
           onClick={fetchGroupsAndTabs}
         >

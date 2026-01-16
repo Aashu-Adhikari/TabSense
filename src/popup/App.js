@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import './popup.css';
 import '../styles/components/search.css';
 import '../styles/components/groups.css';
+import './action-grid.css';
 import { useGroups } from '../hooks/useGroups';
 import { useSearch } from '../hooks/useSearch';
 // import { useMlClassification } from '../hooks/useMlClassification'; // Removed - lazy init instead
@@ -11,6 +12,7 @@ import SearchResultsView from '../components/SearchResultsView';
 import Button from '../components/common/Button';
 import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView'; // <-- NEW IMPORT
+import SettingsView from '../components/SettingsView'; // <-- NEW IMPORT
 import { mlCategories } from '../utils/mlCategories';
 
 function App() {
@@ -24,7 +26,9 @@ function App() {
     handleUngroupAll,
     handleRenameGroup,
     handleAddToGroup,
-    handleOpenTab
+    handleOpenTab,
+    domainSettings,
+    handleSaveDomainSetting
   } = useGroups();
 
   const {
@@ -54,6 +58,9 @@ function App() {
   // ===== NEW STATE FOR CUSTOM GROUP CREATION =====
   const [tabForNewGroup, setTabForNewGroup] = useState(null);
 
+  // ===== NEW STATE FOR SETTINGS =====
+  const [showSettings, setShowSettings] = useState(false);
+
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs.length > 0) setCurrentTab(tabs[0]);
@@ -63,7 +70,7 @@ function App() {
   const handleAssignTabToCategory = async (tab, event) => {
     const { value } = event.target;
     if (!value) return;
-    
+
     // ===== NEW: Handle Custom Group Creation =====
     if (value === 'create_custom') {
       event.target.value = ""; // Reset dropdown
@@ -179,11 +186,24 @@ function App() {
     return <ChatView group={activeChatGroup} onBack={() => setActiveChatGroup(null)} />;
   }
 
+  // ===== NEW VIEW: Settings =====
+  if (showSettings) {
+    return (
+      <SettingsView
+        onSaved={() => {
+          setShowSettings(false);
+          fetchGroupsAndTabs(); // Refresh in case settings affected grouping
+        }}
+        onCancel={() => setShowSettings(false)}
+      />
+    );
+  }
+
   // ===== NEW VIEW: Custom Group Creation =====
   if (tabForNewGroup) {
     return (
-      <CreateGroupView 
-        tab={tabForNewGroup} 
+      <CreateGroupView
+        tab={tabForNewGroup}
         onBack={() => setTabForNewGroup(null)}
         onGroupCreated={() => {
           setTabForNewGroup(null);
@@ -197,21 +217,67 @@ function App() {
     <div className="popup-container">
       <header className="popup-header">
         <h1>🪄 TabSynth</h1>
+        <button
+          className="settings-btn"
+          onClick={() => setShowSettings(true)}
+          title="Settings"
+        >
+          ⚙️
+        </button>
         <p className="subtitle">Smart Tab Groups</p>
       </header>
 
-      {currentTab && (
-        <div style={{ padding: '1rem 1rem 0' }}>
-          <Button 
-            variant="primary" 
-            fullWidth 
-            icon="🤖"
-            onClick={() => setActiveChatTab(currentTab)}
-          >
-            Chat with this Tab
-          </Button>
+      <div className="action-grid">
+        {/* Box 1: Chat with this Tab */}
+        <div className="action-box chat-box">
+          {currentTab && (
+            <Button
+              variant="primary"
+              fullWidth
+              icon="🤖"
+              onClick={() => setActiveChatTab(currentTab)}
+              className="chat-tab-btn"
+            >
+              Chat with Tab
+            </Button>
+          )}
         </div>
-      )}
+
+        {/* Box 2: Grouping Controls */}
+        <div className="action-box grouping-box">
+          {ungroupedTabs.length >= 2 ? (
+            <>
+              <div className="grouping-method-selector">
+                <select
+                  id="grouping-method"
+                  value={groupingMethod}
+                  onChange={(e) => setGroupingMethod(e.target.value)}
+                  className="grouping-method-select"
+                >
+                  <option value="domain">🌐 Domain</option>
+                  <option value="content">📋 Content</option>
+                  <option value="ai">🤖 AI</option>
+                </select>
+              </div>
+
+              <Button
+                variant="primary"
+                onClick={handleGroupTabs}
+                disabled={isGrouping || mlInitializing}
+                loading={isGrouping || mlInitializing}
+                fullWidth
+                className="group-tabs-btn"
+              >
+                {mlInitializing ? 'Init...' : isGrouping ? 'Grouping...' : `Group`}
+              </Button>
+            </>
+          ) : (
+            <div className="empty-placeholder-text">
+              Add more tabs to group
+            </div>
+          )}
+        </div>
+      </div>
 
       <main className="popup-main">
         {/* ... Search Container (unchanged) ... */}
@@ -257,7 +323,7 @@ function App() {
                 </Button>
               )}
             </div>
-            
+
             <div className="groups-list">
               {groups.length > 0 ? (
                 groups.map(group => (
@@ -271,6 +337,9 @@ function App() {
                     onStartRename={handleStartRename}
                     onOpenTab={handleOpenTab}
                     onChatWithGroup={setActiveChatGroup}
+                    domainSettings={domainSettings}
+                    onSaveDomainSetting={handleSaveDomainSetting}
+                    onRename={handleRenameGroup}
                   />
                 ))
               ) : (
@@ -281,40 +350,13 @@ function App() {
             <div className="section-header">
               <h2>Ungrouped Tabs <span className="count-badge">{ungroupedTabs.length}</span></h2>
             </div>
-            
-            {ungroupedTabs.length >= 2 && (
-              <div className="grouping-controls">
-                {/* ... Grouping controls (unchanged) ... */}
-                <div className="grouping-method-selector">
-                  <label htmlFor="grouping-method" className="grouping-label">Grouping Method:</label>
-                  <select
-                    id="grouping-method"
-                    value={groupingMethod}
-                    onChange={(e) => setGroupingMethod(e.target.value)}
-                    className="grouping-method-select"
-                  >
-                    <option value="domain">🌐 Domain Grouping</option>
-                    <option value="content">📋 Content Grouping</option>
-                    <option value="ai">🤖 AI Grouping</option>
-                  </select>
-                </div>
-                
-                <Button
-                  variant="primary"
-                  onClick={handleGroupTabs}
-                  disabled={isGrouping || mlInitializing}
-                  loading={isGrouping || mlInitializing}
-                  fullWidth
-                >
-                  {mlInitializing ? 'Initializing AI...' : isGrouping ? 'Grouping...' : `Group Tabs`}
-                </Button>
-              </div>
-            )}
-            
+
+
+
             <div className="ungrouped-tabs-list">
               {ungroupedTabs.map(tab => (
-                <div 
-                  key={tab.id} 
+                <div
+                  key={tab.id}
                   className="ungrouped-tab-item clickable-tab"
                   onClick={(e) => {
                     if (!e.target.closest('.group-select')) handleOpenTab(tab.id, tab.windowId);
@@ -326,15 +368,15 @@ function App() {
                     <div className="ungrouped-tab-url">{tab.url}</div>
                   </div>
                   <div className="ungrouped-tab-actions">
-                    <select 
+                    <select
                       className="group-select"
                       onChange={(e) => handleAssignTabToCategory(tab, e)}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <option value="">➕ Add to...</option>
-                      
+
                       {/* ===== NEW OPTION ===== */}
-                      <option value="create_custom" style={{fontWeight: 'bold', color: '#3b82f6'}}>
+                      <option value="create_custom" style={{ fontWeight: 'bold', color: '#3b82f6' }}>
                         ✨ Create New Group...
                       </option>
                       {/* ====================== */}

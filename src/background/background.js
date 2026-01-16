@@ -85,6 +85,14 @@ chrome.tabs.onMoved.addListener(updateTabCache);
 chrome.tabs.onAttached.addListener(updateTabCache);
 chrome.tabs.onDetached.addListener(updateTabCache);
 
+// Listen for tab creation to auto-group new tabs
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // Only process when tab becomes complete
+  if (changeInfo.status === 'complete') {
+    await autoGroupTab(tab);
+  }
+});
+
 chrome.tabGroups.onCreated.addListener(updateTabCache);
 chrome.tabGroups.onRemoved.addListener(updateTabCache);
 chrome.tabGroups.onUpdated.addListener(updateTabCache);
@@ -94,27 +102,128 @@ chrome.tabGroups.onMoved.addListener(updateTabCache);
 chrome.runtime.onStartup.addListener(updateTabCache);
 chrome.runtime.onInstalled.addListener(updateTabCache);
 
+// =================================================================
+// ===== AUTO-GROUPING LOGIC =======================================
+// =================================================================
 
+// Helper function to determine if a tab should be auto-grouped
+function shouldAutoGroupTab(tab) {
+  // Skip if tab is not fully loaded
+  if (tab.status !== 'complete') return false;
+
+  // Skip chrome:// URLs and other internal pages
+  if (tab.url.startsWith('chrome://') ||
+    tab.url.startsWith('chrome-extension://') ||
+    tab.url.startsWith('about:') ||
+    tab.url.startsWith('edge://')) {
+    return false;
+  }
+
+  // Skip new tab pages
+  if (tab.url === 'chrome://newtab/' ||
+    tab.url.includes('newtab') ||
+    tab.title.toLowerCase().includes('new tab')) {
+    return false;
+  }
+
+  // Skip tabs that are already grouped
+  if (tab.groupId !== -1) return false;
+
+  return true;
+}
+
+// Function to auto-group a newly created tab
+async function autoGroupTab(tab) {
+  try {
+    // Check if auto-grouping is enabled
+    const settings = await chrome.storage.local.get(['auto_grouping_settings']);
+    const autoGroupingSettings = settings.auto_grouping_settings || {};
+    if (!autoGroupingSettings.enabled) return;
+
+    // Check if tab should be auto-grouped
+    if (!shouldAutoGroupTab(tab)) return;
+
+    console.log('Background: Auto-grouping tab:', tab.title, tab.url);
+
+    // Import required modules dynamically
+    const { tabClassifier } = await import('../ml/classifier.js');
+    const groupHandlers = await import('./messageHandlers/groupHandlers.js');
+
+    let category = null;
+    let emoji = null;
+
+    switch (autoGroupingSettings.method) {
+      case 'domain':
+        // Extract domain for grouping
+        try {
+          const url = new URL(tab.url);
+          category = url.hostname.replace('www.', '').split('.')[0];
+          emoji = '🌐';
+        } catch (e) {
+          category = 'Web';
+          emoji = '🌐';
+        }
+        break;
+
+      case 'content':
+        // Use content-based grouping (simplified)
+        category = tab.title.split(' ')[0] || 'Content';
+        emoji = '📋';
+        break;
+
+      case 'ai':
+        // Use ML classification
+        if (!tabClassifier.initialized) {
+          await tabClassifier.initialize();
+        }
+        const classification = await tabClassifier.classifyTab(tab.title, tab.url);
+        category = classification.category;
+        emoji = tabClassifier.getCategoryEmoji(category);
+        break;
+
+      default:
+        return; // Unknown method
+    }
+
+    // Find or create group and add tab
+    const result = await new Promise((resolve, reject) => {
+      groupHandlers.handleFindOrCreateGroupAndAddTab({
+        tabId: tab.id,
+        categoryName: category,
+        categoryEmoji: emoji
+      }, resolve);
+    });
+
+    if (result && result.success) {
+      console.log('Background: Successfully auto-grouped tab:', tab.title);
+    } else {
+      console.warn('Background: Failed to auto-group tab:', result?.error);
+    }
+
+  } catch (error) {
+    console.error('Background: Error in auto-grouping:', error);
+  }
+}
 
 // =================================================================
 // ===== MESSAGE ROUTING ===========================================
 // =================================================================
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  
+
   // --- Tab Handlers ---
   if (request.action === "GET_ALL_TABS") {
     return tabHandlers.handleGetAllTabs(request, sendResponse);
   }
-  
+
   if (request.action === "GET_GROUPS_WITH_TABS") {
     return tabHandlers.handleGetGroupsWithTabs(request, sendResponse);
   }
-  
+
   if (request.action === "UNGROUP_SINGLE_TAB") {
     return tabHandlers.handleUngroupSingleTab(request, sendResponse);
   }
-  
+
   if (request.action === "ADD_TAB_TO_GROUP") {
     return tabHandlers.handleAddToGroup(request, sendResponse);
   }
@@ -123,23 +232,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "GROUP_TABS") {
     return groupHandlers.handleGroupTabs(request, sendResponse);
   }
-  
+
   if (request.action === "AUTO_GROUP_TABS") {
     return groupHandlers.handleAutoGroupTabs(request, sendResponse);
   }
-  
+
   if (request.action === "GROUP_BY_DOMAIN") {
     return groupHandlers.handleGroupByDomain(request, sendResponse);
   }
-  
+
   if (request.action === "GROUP_BY_CONTENT") {
     return groupHandlers.handleGroupByContent(request, sendResponse);
   }
-  
+
   if (request.action === "UNGROUP_ALL_TABS") {
     return groupHandlers.handleUngroupAllTabs(request, sendResponse);
   }
-  
+
   if (request.action === "RENAME_GROUP") {
     return groupHandlers.handleRenameGroup(request, sendResponse);
   }
@@ -157,23 +266,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "INITIALIZE_ML") {
     return mlHandlers.handleInitializeML(request, sendResponse);
   }
-  
+
   if (request.action === "PING_ML") {
     return mlHandlers.handlePingML(request, sendResponse);
   }
-  
+
   if (request.action === "CLASSIFY_TAB") {
     return mlHandlers.handleClassifyTab(request, sendResponse);
   }
-  
+
   if (request.action === "GET_SMART_GROUP_NAME") {
     return mlHandlers.handleGetSmartGroupName(request, sendResponse);
   }
-  
+
   if (request.action === "TRAIN_MODEL") {
     return mlHandlers.handleTrainModel(request, sendResponse);
   }
-  
+
   if (request.action === "ML_AUTO_GROUP_ALL_TABS") {
     return mlHandlers.handleMlAutoGroupAllTabs(request, sendResponse);
   }

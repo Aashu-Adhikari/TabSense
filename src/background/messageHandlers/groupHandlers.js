@@ -41,7 +41,7 @@ export async function handleFindOrCreateGroupAndAddTab(request, sendResponse) {
 
 export function handleGroupTabs(request, sendResponse) {
   const { tabIds, groupName } = request;
-  
+
   if (!tabIds || tabIds.length === 0) {
     sendResponse({ success: false, error: "No tab IDs provided" });
     return true;
@@ -54,9 +54,9 @@ export function handleGroupTabs(request, sendResponse) {
     }
 
     const windowId = firstTab.windowId;
-    
+
     chrome.tabs.query({ windowId: windowId }, (windowTabs) => {
-      const validTabIds = tabIds.filter(id => 
+      const validTabIds = tabIds.filter(id =>
         windowTabs.some(tab => tab.id === id)
       );
 
@@ -67,9 +67,9 @@ export function handleGroupTabs(request, sendResponse) {
 
       chrome.tabs.group({ tabIds: validTabIds }, (groupId) => {
         if (chrome.runtime.lastError) {
-          sendResponse({ 
-            success: false, 
-            error: `Grouping failed: ${chrome.runtime.lastError.message}` 
+          sendResponse({
+            success: false,
+            error: `Grouping failed: ${chrome.runtime.lastError.message}`
           });
           return;
         }
@@ -78,8 +78,8 @@ export function handleGroupTabs(request, sendResponse) {
           title: groupName,
           color: "grey"
         }, () => {
-          sendResponse({ 
-            success: true, 
+          sendResponse({
+            success: true,
             groupId: groupId,
             groupName: groupName,
             tabCount: validTabIds.length
@@ -98,19 +98,24 @@ export function handleGroupByDomain(request, sendResponse) {
       return true;
     }
 
-    import('../utils/groupingAlgorithms.js').then(({ 
-      groupTabsByDomain,
-      createTabGroups 
-    }) => {
-      // Group only by domain (no content-based grouping)
-      const domainGroups = groupTabsByDomain(allTabs);
-      
-      createTabGroups(domainGroups, (results) => {
-        sendResponse({ 
-          success: true, 
-          message: `Created ${results.created} domain-based groups`,
-          groups: results.groups,
-          totalTabs: allTabs.length
+    // Fetch custom domain settings first
+    chrome.storage.local.get(['custom_domain_settings'], (result) => {
+      const domainSettings = result.custom_domain_settings || {};
+
+      import('../utils/groupingAlgorithms.js').then(({
+        groupTabsByDomain,
+        createTabGroups
+      }) => {
+        // Group only by domain (no content-based grouping)
+        const domainGroups = groupTabsByDomain(allTabs, domainSettings);
+
+        createTabGroups(domainGroups, (results) => {
+          sendResponse({
+            success: true,
+            message: `Created ${results.created} domain-based groups`,
+            groups: results.groups,
+            totalTabs: allTabs.length
+          });
         });
       });
     });
@@ -125,16 +130,16 @@ export function handleGroupByContent(request, sendResponse) {
       return true;
     }
 
-    import('../utils/groupingAlgorithms.js').then(({ 
+    import('../utils/groupingAlgorithms.js').then(({
       groupTabsByContent,
-      createTabGroups 
+      createTabGroups
     }) => {
       // Group by content patterns
       const contentGroups = groupTabsByContent(allTabs);
-      
+
       createTabGroups(contentGroups, (results) => {
-        sendResponse({ 
-          success: true, 
+        sendResponse({
+          success: true,
           message: `Created ${results.created} content-based groups`,
           groups: results.groups,
           totalTabs: allTabs.length
@@ -151,13 +156,13 @@ export function handleAutoGroupTabs(request, sendResponse) {
 
 export function handleUngroupAllTabs(request, sendResponse) {
   const { groupId } = request;
-  
+
   chrome.tabs.query({ groupId: groupId }, (tabs) => {
     if (tabs.length === 0) {
       sendResponse({ success: true, message: "Group already empty" });
       return;
     }
-    
+
     const tabIds = tabs.map(tab => tab.id);
     chrome.tabs.ungroup(tabIds, () => {
       if (chrome.runtime.lastError) {
@@ -172,7 +177,7 @@ export function handleUngroupAllTabs(request, sendResponse) {
 
 export function handleRenameGroup(request, sendResponse) {
   const { groupId, newName } = request;
-  
+
   chrome.tabGroups.update(groupId, { title: newName }, () => {
     if (chrome.runtime.lastError) {
       sendResponse({ success: false, error: chrome.runtime.lastError.message });
