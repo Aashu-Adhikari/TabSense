@@ -6,11 +6,11 @@ import { getGroupColor } from '../utils/groupingAlgorithms.js';
 // ===== NEW: FIND/CREATE GROUP FROM ML CATEGORY ===================
 // =================================================================
 export async function handleFindOrCreateGroupAndAddTab(request, sendResponse) {
-  const { tabId, categoryName, categoryEmoji } = request;
+  const { tabId, categoryName, categoryEmoji, groupTitle } = request;
 
   try {
     const allGroups = await new Promise(resolve => chrome.tabGroups.query({}, resolve));
-    const targetTitle = `${categoryEmoji} ${categoryName}`;
+    const targetTitle = groupTitle || `${categoryEmoji} ${categoryName}`;
     let targetGroup = allGroups.find(group => group.title === targetTitle);
 
     if (targetGroup) {

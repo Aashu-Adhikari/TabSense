@@ -136,8 +136,10 @@ function shouldAutoGroupTab(tab) {
 async function autoGroupTab(tab) {
   try {
     // Check if auto-grouping is enabled
-    const settings = await chrome.storage.local.get(['auto_grouping_settings']);
+    const settings = await chrome.storage.local.get(['auto_grouping_settings', 'custom_domain_settings']);
     const autoGroupingSettings = settings.auto_grouping_settings || {};
+    const domainSettings = settings.custom_domain_settings || {};
+
     if (!autoGroupingSettings.enabled) return;
 
     // Check if tab should be auto-grouped
@@ -148,17 +150,18 @@ async function autoGroupTab(tab) {
     // Import required modules dynamically
     const { tabClassifier } = await import('../ml/classifier.js');
     const groupHandlers = await import('./messageHandlers/groupHandlers.js');
+    const { getFriendlyDomainName } = await import('./utils/groupingAlgorithms.js');
 
     let category = null;
     let emoji = null;
+    let groupTitle = null;
 
     switch (autoGroupingSettings.method) {
       case 'domain':
         // Extract domain for grouping
         try {
-          const url = new URL(tab.url);
-          category = url.hostname.replace('www.', '').split('.')[0];
-          emoji = '🌐';
+          const domain = new URL(tab.url).hostname.replace('www.', '');
+          groupTitle = getFriendlyDomainName(domain, domainSettings);
         } catch (e) {
           category = 'Web';
           emoji = '🌐';
@@ -190,7 +193,8 @@ async function autoGroupTab(tab) {
       groupHandlers.handleFindOrCreateGroupAndAddTab({
         tabId: tab.id,
         categoryName: category,
-        categoryEmoji: emoji
+        categoryEmoji: emoji,
+        groupTitle: groupTitle
       }, resolve);
     });
 

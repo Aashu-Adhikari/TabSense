@@ -51,7 +51,7 @@ class LLMService {
       model: config.model,
       messages: [systemPrompt, ...messages],
       temperature: 0.7,
-      max_tokens: 5000,
+      max_tokens: 10000,
       stream: true, // Enable streaming
       provider: { ignore: ["False"] }
     };

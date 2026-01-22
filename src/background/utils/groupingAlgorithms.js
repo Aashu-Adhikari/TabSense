@@ -152,7 +152,7 @@ export function createTabGroups(groups, callback) {
   });
 }
 
-function getFriendlyDomainName(domain, domainSettings = {}) {
+export function getFriendlyDomainName(domain, domainSettings = {}) {
   const settings = domainSettings[domain] || {};
 
   // 1. Use custom name if available

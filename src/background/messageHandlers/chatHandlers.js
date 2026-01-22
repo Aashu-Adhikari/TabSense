@@ -107,7 +107,7 @@ export function handleExtractGroupContent(request, sendResponse) {
         if (!content || content === "NO_CONTENT_FOUND") return null;
         
         // Truncate per-tab content
-        const truncated = content.substring(0, 10000); 
+        const truncated = content.substring(0, 20000); 
         
         return {
           tabId: tab.id,
