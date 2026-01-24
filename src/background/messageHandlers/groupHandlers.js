@@ -11,6 +11,10 @@ export async function handleFindOrCreateGroupAndAddTab(request, sendResponse) {
   try {
     const allGroups = await new Promise(resolve => chrome.tabGroups.query({}, resolve));
     const targetTitle = groupTitle || `${categoryEmoji} ${categoryName}`;
+    
+    console.log('Finding or creating group for title:', targetTitle);
+    console.log('Existing groups:', allGroups.map(g => g.title));
+    
     let targetGroup = allGroups.find(group => group.title === targetTitle);
 
     if (targetGroup) {
@@ -26,6 +30,31 @@ export async function handleFindOrCreateGroupAndAddTab(request, sendResponse) {
           color: getGroupColor('content') // Assign a default color
         }, resolve);
       });
+
+      // Position the new group correctly for alphabetical order in browser header
+      const updatedAllGroups = await new Promise(resolve => chrome.tabGroups.query({}, resolve));
+      // Sort groups by name after the emoji prefix
+      const groupsInOrder = updatedAllGroups.sort((a, b) => {
+        const aName = a.title.replace(/^[\p{Emoji}]+ /u, '');
+        const bName = b.title.replace(/^[\p{Emoji}]+ /u, '');
+        return aName.localeCompare(bName);
+      });
+      const newGroupIndex = groupsInOrder.findIndex(group => group.id === newGroupId);
+      
+      // Move the new group to the correct position
+      // Find the first tab of the new group to move
+      const newGroupTabs = await new Promise(resolve => chrome.tabs.query({ groupId: newGroupId }, resolve));
+      if (newGroupTabs.length > 0) {
+        // Calculate target index: sum of tab counts of all groups before newGroupIndex
+        let targetTabIndex = 0;
+        for (let i = 0; i < newGroupIndex; i++) {
+          const groupTabs = await new Promise(resolve => chrome.tabs.query({ groupId: groupsInOrder[i].id }, resolve));
+          targetTabIndex += groupTabs.length;
+        }
+        // Move the first tab of the new group to the target index to position the whole group
+        await new Promise(resolve => chrome.tabs.move(newGroupTabs[0].id, { index: targetTabIndex }, resolve));
+      }
+
       sendResponse({ success: true, groupId: newGroupId, created: true });
     }
   } catch (error) {

@@ -12,7 +12,7 @@ import SearchResultsView from '../components/SearchResultsView';
 import Button from '../components/common/Button';
 import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView'; // <-- NEW IMPORT
-import SettingsView from '../components/SettingsView'; // <-- NEW IMPORT
+import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView'; // <-- NEW IMPORT
 import { mlCategories } from '../utils/mlCategories';
 
 function App() {
@@ -190,6 +190,7 @@ function App() {
   if (showSettings) {
     return (
       <SettingsView
+        enabledComponents={COMPONENT_FILTERS.HEADER}
         onSaved={() => {
           setShowSettings(false);
           fetchGroupsAndTabs(); // Refresh in case settings affected grouping
@@ -315,12 +316,23 @@ function App() {
             <div className="section-header">
               <h2>Tab Groups ({groups.length})</h2>
               {groups.length > 0 && (
-                <Button variant="secondary" onClick={() => {
-                  if (expandedGroups.size === groups.length) setExpandedGroups(new Set());
-                  else setExpandedGroups(new Set(groups.map(g => g.id)));
-                }}>
-                  {expandedGroups.size === groups.length ? 'Collapse All' : 'Expand All'}
-                </Button>
+                <div className="section-header-actions">
+                  <Button variant="secondary" onClick={() => {
+                    if (expandedGroups.size === groups.length) setExpandedGroups(new Set());
+                    else setExpandedGroups(new Set(groups.map(g => g.id)));
+                  }}>
+                    {expandedGroups.size === groups.length ? 'Collapse All' : 'Expand All'}
+                  </Button>
+                  <Button variant="secondary" onClick={() => {
+                    if (confirm('Are you sure you want to ungroup all tabs?')) {
+                      Promise.all(groups.map(group => handleUngroupAll(group.id, true)))
+                        .then(() => fetchGroupsAndTabs())
+                        .catch(error => console.error('Error ungrouping all tabs:', error));
+                    }
+                  }}>
+                    Ungroup All
+                  </Button>
+                </div>
               )}
             </div>
 

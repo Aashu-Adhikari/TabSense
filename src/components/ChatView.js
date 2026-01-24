@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { chromeApi } from '../services/chromeApi';
-import SettingsView from './SettingsView';
+import SettingsView, { COMPONENT_FILTERS } from './SettingsView';
 import Button from './common/Button';
 
 // Quick Action Chips data structure
@@ -245,6 +245,7 @@ const ChatView = ({ tab, group, onBack }) => {
         <div className="chat-body-centered">
           <SettingsView 
             isFirstSetup={!hasConfig}
+            enabledComponents={COMPONENT_FILTERS.CHAT}
             onSaved={() => {
               setShowSettings(false);
               checkConfig(); 

@@ -748,6 +748,18 @@
   height: 580px;
   background: #f8fafc;
   box-sizing: border-box;
+  padding: 1rem;
+}
+
+.empty-settings {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
+  font-style: italic;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .settings-container h3 {

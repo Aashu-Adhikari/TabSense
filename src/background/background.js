@@ -85,11 +85,60 @@ chrome.tabs.onMoved.addListener(updateTabCache);
 chrome.tabs.onAttached.addListener(updateTabCache);
 chrome.tabs.onDetached.addListener(updateTabCache);
 
-// Listen for tab creation to auto-group new tabs
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  // Only process when tab becomes complete
-  if (changeInfo.status === 'complete') {
-    await autoGroupTab(tab);
+// Track tab activity
+const activeTabTimers = new Map();
+let previousActiveTabId = null; // Track previous active tab manually
+const ACTIVITY_TIMEOUT = 5000; // 5 seconds of inactivity to trigger grouping
+
+// When user activates a tab
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  console.log('Background: Tab activated:', activeInfo.tabId);
+  
+  // If there was a previous active tab, it's now deactivated
+  if (previousActiveTabId && previousActiveTabId !== activeInfo.tabId) {
+    try {
+      const previousTab = await new Promise(resolve => chrome.tabs.get(previousActiveTabId, resolve));
+      
+      if (previousTab && previousTab.groupId === -1) {
+        console.log('Background: User stopped working on tab:', previousTab.title);
+        
+        // Set a timer to group the tab after inactivity
+        const timer = setTimeout(async () => {
+          await autoGroupTab(previousTab);
+          activeTabTimers.delete(previousTab.id);
+        }, ACTIVITY_TIMEOUT);
+        
+        activeTabTimers.set(previousTab.id, timer);
+      }
+    } catch (error) {
+      console.error('Background: Error getting previous active tab:', error);
+    }
+  }
+  
+  // Clear any existing timer for the newly activated tab
+  if (activeTabTimers.has(activeInfo.tabId)) {
+    clearTimeout(activeTabTimers.get(activeInfo.tabId));
+    activeTabTimers.delete(activeInfo.tabId);
+    console.log('Background: Cleared timer for newly activated tab');
+  }
+  
+  // Get the tab info and log
+  try {
+    const currentTab = await new Promise(resolve => chrome.tabs.get(activeInfo.tabId, resolve));
+    console.log('Background: User started working on tab:', currentTab.title);
+  } catch (error) {
+    console.error('Background: Error getting current tab info:', error);
+  }
+  
+  // Update previous active tab reference
+  previousActiveTabId = activeInfo.tabId;
+});
+
+// Also handle case when user closes a tab or navigates away from a tab
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+  if (activeTabTimers.has(tabId)) {
+    clearTimeout(activeTabTimers.get(tabId));
+    activeTabTimers.delete(tabId);
   }
 });
 

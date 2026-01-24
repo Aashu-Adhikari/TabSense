@@ -70,8 +70,8 @@ export const useGroups = () => {
     }
   };
 
-  const handleUngroupAll = async (groupId) => {
-    if (!confirm("Ungroup all tabs in this group?")) return;
+  const handleUngroupAll = async (groupId, skipConfirm = false) => {
+    if (!skipConfirm && !confirm("Ungroup all tabs in this group?")) return;
 
     try {
       await chromeApi.ungroupAllTabs(groupId);
