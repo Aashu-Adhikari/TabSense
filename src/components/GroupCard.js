@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getColorEmoji } from '../utils/uiUtils';
+import EmojiPicker from './EmojiPicker';
 
 const GroupCard = ({
   group,
@@ -16,8 +17,7 @@ const GroupCard = ({
 }) => {
   const [renamingGroup, setRenamingGroup] = useState(null);
   const [newGroupName, setNewGroupName] = useState('');
-  const [editingEmoji, setEditingEmoji] = useState(false);
-  const [newEmoji, setNewEmoji] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [editingDomainName, setEditingDomainName] = useState(false);
   const [newDomainName, setNewDomainName] = useState('');
 
@@ -67,16 +67,11 @@ const GroupCard = ({
     ? group.tabs.find(tab => tab.favIconUrl && !tab.favIconUrl.startsWith('chrome'))?.favIconUrl
     : null;
 
-  const handleSaveEmoji = () => {
+  const handleEmojiSelect = (emoji) => {
     const settings = { ...domainSetting };
-    if (newEmoji.trim()) {
-      settings.emoji = newEmoji.trim();
-    } else {
-      delete settings.emoji;
-    }
+    settings.emoji = emoji;
     onSaveDomainSetting(firstHostname, settings);
-    setEditingEmoji(false);
-    setNewEmoji('');
+    setShowEmojiPicker(false);
   };
 
   const handleSaveDomainName = () => {
@@ -101,28 +96,13 @@ const GroupCard = ({
             onClick={(e) => {
               if (isSingleDomain) {
                 e.stopPropagation();
-                setEditingEmoji(true);
-                setNewEmoji(customEmoji || '');
+                setShowEmojiPicker(true);
               }
             }}
             style={{ cursor: isSingleDomain ? 'pointer' : 'default', position: 'relative', marginRight: '8px' }}
             title={isSingleDomain ? "Click to set custom emoji" : ""}
           >
-            {editingEmoji ? (
-              <input
-                type="text"
-                className="emoji-input"
-                value={newEmoji}
-                onChange={(e) => setNewEmoji(e.target.value)}
-                onBlur={handleSaveEmoji}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveEmoji();
-                  if (e.key === 'Escape') setEditingEmoji(false);
-                }}
-                autoFocus
-                style={{ width: '24px', textAlign: 'center', padding: 0, border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-            ) : groupFavicon ? (
+            {groupFavicon ? (
               <img
                 src={groupFavicon}
                 alt="Group Icon"
@@ -234,8 +214,7 @@ const GroupCard = ({
                       className="group-action-btn emoji-btn"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setEditingEmoji(true);
-                        setNewEmoji(customEmoji || '');
+                        setShowEmojiPicker(true);
                       }}
                       title="Set custom emoji for this domain"
                     >
@@ -272,6 +251,12 @@ const GroupCard = ({
           </div>
         </div>
       )}
+
+      <EmojiPicker
+        isOpen={showEmojiPicker}
+        onSelect={handleEmojiSelect}
+        onClose={() => setShowEmojiPicker(false)}
+      />
     </div>
   );
 };

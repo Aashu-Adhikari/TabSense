@@ -4,6 +4,34 @@ import remarkGfm from 'remark-gfm';
 import { chromeApi } from '../services/chromeApi';
 import SettingsView, { COMPONENT_FILTERS } from './SettingsView';
 import Button from './common/Button';
+import '../popup/chat.css';
+
+// Copy to clipboard function
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (err) {
+    console.error('Failed to copy text to clipboard:', err);
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return true;
+    } catch (fallbackErr) {
+      console.error('Fallback copy method failed:', fallbackErr);
+      document.body.removeChild(textArea);
+      return false;
+    }
+  }
+};
 
 // Quick Action Chips data structure
 const QUICK_CHIPS = [
@@ -268,6 +296,21 @@ const ChatView = ({ tab, group, onBack }) => {
         <span className="chat-tab-title" title={targetTitle}>
           {group ? '📁 ' : ''}{targetTitle}
         </span>
+        {messages.length > 0 && (
+          <button
+            className="export-chat-btn"
+            onClick={() => {
+              const transcript = messages.map(msg => {
+                const role = msg.role === 'user' ? 'You' : 'AI';
+                return `${role}: ${msg.content}`;
+              }).join('\n\n');
+              copyToClipboard(transcript);
+            }}
+            title="Export chat transcript"
+          >
+            📄
+          </button>
+        )}
         <button 
           className="settings-btn" 
           onClick={() => setShowSettings(true)}
@@ -304,50 +347,61 @@ const ChatView = ({ tab, group, onBack }) => {
 
         {messages.map((m, i) => (
           <div key={i} className={`chat-bubble ${m.role}`}>
-            {(() => {
-              // Pre-process markdown to convert [Source N] to markdown links
-              const processedContent = m.content.replace(
-                /\[Source\s+(\d+)(?:[:\s]+([^\]]+))?\]/gi,
-                (match, num, title) => {
-                  const sourceNum = parseInt(num);
-                  const tabInfo = tabMetadata[sourceNum - 1];
-                  const linkTitle = title || (tabInfo ? tabInfo.title : `Source ${sourceNum}`);
-                  return `[🔗 ${linkTitle}](/citation-${sourceNum})`;
-                }
-              );
-              
-              return (
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    a: ({node, href, children}) => {
-                      // Check if this is a citation link
-                      const citationMatch = href?.match(/\/citation-(\d+)/);
-                      if (citationMatch) {
-                        const sourceNum = parseInt(citationMatch[1]);
-                        const tabInfo = tabMetadata[sourceNum - 1];
-                        return (
-                          <button
-                            className="citation-link"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleCitationClick(sourceNum);
-                            }}
-                            title={`Jump to: ${tabInfo?.title || `Source ${sourceNum}`}`}
-                          >
-                            {children}
-                          </button>
-                        );
+            <div className="chat-bubble-content">
+              {(() => {
+                // Pre-process markdown to convert [Source N] to markdown links
+                const processedContent = m.content.replace(
+                  /\[Source\s+(\d+)(?:[:\s]+([^\]]+))?\]/gi,
+                  (match, num, title) => {
+                    const sourceNum = parseInt(num);
+                    const tabInfo = tabMetadata[sourceNum - 1];
+                    const linkTitle = title || (tabInfo ? tabInfo.title : `Source ${sourceNum}`);
+                    return `[🔗 ${linkTitle}](/citation-${sourceNum})`;
+                  }
+                );
+                
+                return (
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      a: ({node, href, children}) => {
+                        // Check if this is a citation link
+                        const citationMatch = href?.match(/\/citation-(\d+)/);
+                        if (citationMatch) {
+                          const sourceNum = parseInt(citationMatch[1]);
+                          const tabInfo = tabMetadata[sourceNum - 1];
+                          return (
+                            <button
+                              className="citation-link"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleCitationClick(sourceNum);
+                              }}
+                              title={`Jump to: ${tabInfo?.title || `Source ${sourceNum}`}`}
+                            >
+                              {children}
+                            </button>
+                          );
+                        }
+                        return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
                       }
-                      return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
-                    }
-                  }}
-                >
-                  {processedContent}
-                </ReactMarkdown>
-              );
-            })()}
+                    }}
+                  >
+                    {processedContent}
+                  </ReactMarkdown>
+                );
+              })()}
+            </div>
+            {m.role === 'assistant' && (
+              <button
+                className="copy-message-btn"
+                onClick={() => copyToClipboard(m.content)}
+                title="Copy message"
+              >
+                📋
+              </button>
+            )}
           </div>
         ))}
 

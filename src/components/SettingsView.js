@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { chromeApi } from '../services/chromeApi';
 import Button from './common/Button';
+import '../popup/settings.css';
 
 const PRESETS = {
   free: {

@@ -1,6 +1,6 @@
 // src/popup/App.js
 import React, { useState, useEffect } from 'react';
-import './popup.css';
+import './base.css';
 import '../styles/components/search.css';
 import '../styles/components/groups.css';
 import './action-grid.css';
