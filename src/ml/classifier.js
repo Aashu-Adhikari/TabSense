@@ -332,8 +332,8 @@ class TabClassifier {
       const classifications = await Promise.all(
         ungroupedTabs.map(async (tab) => this.classifyTab(tab.title, tab.url).then(classification => ({ tab, classification })))
       );
-      
-      const validTabs = classifications.filter(item => 
+
+      const validTabs = classifications.filter(item =>
         item.classification.confidence >= confidenceThreshold
       );
 
@@ -355,10 +355,26 @@ class TabClassifier {
         .sort((a, b) => b.tabs.length - a.tabs.length)
         .slice(0, maxGroups);
 
+      // Collect all tab IDs that were grouped
+      const groupedTabIds = new Set(finalGroups.flatMap(group => group.tabs.map(tab => tab.id)));
+
+      // Find tabs that weren't grouped (either low confidence or single tabs)
+      const ungroupedTabIds = ungroupedTabs
+        .filter(tab => !groupedTabIds.has(tab.id))
+        .map(tab => tab.id);
+
+      // If there are ungrouped tabs, create a General Browsing group
       const namedGroups = finalGroups.map(group => ({
         name: `${this.getCategoryEmoji(group.category)} ${group.category}`,
         tabIds: group.tabs.map(tab => tab.id)
       }));
+
+      if (ungroupedTabIds.length > 0) {
+        namedGroups.push({
+          name: `${this.getCategoryEmoji('General Browsing')} General Browsing`,
+          tabIds: ungroupedTabIds
+        });
+      }
 
       return { success: true, groups: namedGroups };
 

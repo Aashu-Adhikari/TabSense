@@ -157,7 +157,7 @@ function App() {
         alert(response.message || 'Grouping successful!');
         fetchGroupsAndTabs();
       } else {
-        throw new Error(response.error || 'Grouping failed');
+        throw new Error(response ? (response.error || 'Grouping failed') : 'No response from background script');
       }
     } catch (error) {
       alert(`Tab grouping failed: ${error.message}`);

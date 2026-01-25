@@ -1,6 +1,7 @@
 // src/background/messageHandlers/groupHandlers.js
 
 import { getGroupColor } from '../utils/groupingAlgorithms.js';
+import { emojiService } from '../../services/emojiService.js';
 
 // =================================================================
 // ===== NEW: FIND/CREATE GROUP FROM ML CATEGORY ===================
@@ -27,7 +28,8 @@ export async function handleFindOrCreateGroupAndAddTab(request, sendResponse) {
       await new Promise(resolve => {
         chrome.tabGroups.update(newGroupId, {
           title: targetTitle,
-          color: getGroupColor('content') // Assign a default color
+          color: getGroupColor('content'), // Assign a default color
+          collapsed: true
         }, resolve);
       });
 
@@ -105,7 +107,8 @@ export function handleGroupTabs(request, sendResponse) {
 
         chrome.tabGroups.update(groupId, {
           title: groupName,
-          color: "grey"
+          color: "grey",
+          collapsed: true
         }, () => {
           sendResponse({
             success: true,
@@ -124,31 +127,41 @@ export function handleGroupByDomain(request, sendResponse) {
   chrome.tabs.query({}, (allTabs) => {
     if (allTabs.length === 0) {
       sendResponse({ success: true, message: "No tabs to group", groups: [] });
-      return true;
+      return;
     }
 
-    // Fetch custom domain settings first
-    chrome.storage.local.get(['custom_domain_settings'], (result) => {
-      const domainSettings = result.custom_domain_settings || {};
-
+    // Fetch merged domain settings (defaults + custom)
+    emojiService.getDomainSettings().then((domainSettings) => {
       import('../utils/groupingAlgorithms.js').then(({
         groupTabsByDomain,
         createTabGroups
       }) => {
-        // Group only by domain (no content-based grouping)
-        const domainGroups = groupTabsByDomain(allTabs, domainSettings);
+        try {
+          // Group only by domain (no content-based grouping)
+          const domainGroups = groupTabsByDomain(allTabs, domainSettings);
 
-        createTabGroups(domainGroups, (results) => {
-          sendResponse({
-            success: true,
-            message: `Created ${results.created} domain-based groups`,
-            groups: results.groups,
-            totalTabs: allTabs.length
+          createTabGroups(domainGroups, (results) => {
+            sendResponse({
+              success: true,
+              message: `Created ${results.created} domain-based groups`,
+              groups: results.groups,
+              totalTabs: allTabs.length
+            });
           });
-        });
+        } catch (error) {
+          console.error('Error in domain grouping:', error);
+          sendResponse({ success: false, error: error.message });
+        }
+      }).catch((importError) => {
+        console.error('Error importing grouping algorithms:', importError);
+        sendResponse({ success: false, error: 'Failed to load grouping algorithms' });
       });
+    }).catch((settingsError) => {
+      console.error('Error getting domain settings:', settingsError);
+      sendResponse({ success: false, error: 'Failed to get domain settings' });
     });
   });
+
   return true;
 }
 

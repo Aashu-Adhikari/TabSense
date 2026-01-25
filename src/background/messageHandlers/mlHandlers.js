@@ -215,26 +215,43 @@ export function handleMlAutoGroupAllTabs(request, sendResponse) {
                   if (!chrome.runtime.lastError && groupId) {
                     chrome.tabGroups.update(groupId, {
                       title: group.name,
-                      color: getGroupColor('content')
+                      color: getGroupColor('content'),
+                      collapsed: true
                     }, () => {
+                      if (chrome.runtime.lastError) {
+                        console.error(`Failed to update AI group ${group.name}:`, chrome.runtime.lastError);
+                      }
+
                       createdGroups.push({
                         groupId,
                         name: group.name,
                         tabCount: group.tabIds.length
                       });
-                      
+
                       completed++;
                       if (completed === mlGroups.length) {
-                        sendResponse({
-                          success: true,
-                          message: `Created ${createdGroups.length} AI-powered groups`,
-                          groupsCreated: createdGroups.length,
-                          totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
-                          groups: createdGroups
-                        });
+                        // Ensure all groups stay collapsed after creation
+                        setTimeout(() => {
+                          createdGroups.forEach(createdGroup => {
+                            chrome.tabGroups.update(createdGroup.groupId, { collapsed: true }, () => {
+                              if (chrome.runtime.lastError) {
+                                console.debug(`Failed to ensure AI group ${createdGroup.name} stays collapsed:`, chrome.runtime.lastError);
+                              }
+                            });
+                          });
+
+                          sendResponse({
+                            success: true,
+                            message: `Created ${createdGroups.length} AI-powered groups`,
+                            groupsCreated: createdGroups.length,
+                            totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
+                            groups: createdGroups
+                          });
+                        }, 300);
                       }
                     });
                   } else {
+                    console.error(`Failed to create AI group ${group.name}:`, chrome.runtime.lastError);
                     completed++;
                     if (completed === mlGroups.length) {
                       sendResponse({

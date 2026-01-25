@@ -9,6 +9,7 @@ import * as groupHandlers from './messageHandlers/groupHandlers.js';
 import * as searchHandlers from './messageHandlers/searchHandlers.js';
 import * as mlHandlers from './messageHandlers/mlHandlers.js';
 import * as chatHandlers from './messageHandlers/chatHandlers.js';
+import { emojiService } from '../services/emojiService.js';
 
 // =================================================================
 // ===== PROACTIVE CACHING FOR INSTANT POPUP UI ====================
@@ -185,9 +186,9 @@ function shouldAutoGroupTab(tab) {
 async function autoGroupTab(tab) {
   try {
     // Check if auto-grouping is enabled
-    const settings = await chrome.storage.local.get(['auto_grouping_settings', 'custom_domain_settings']);
+    const settings = await chrome.storage.local.get(['auto_grouping_settings']);
     const autoGroupingSettings = settings.auto_grouping_settings || {};
-    const domainSettings = settings.custom_domain_settings || {};
+    const domainSettings = await emojiService.getDomainSettings();
 
     if (!autoGroupingSettings.enabled) return;
 

@@ -148,61 +148,22 @@ export function createTabGroups(groups, callback) {
   const results = [];
   let completed = 0;
 
-  // Process groups in alphabetical order and position them correctly
+  // Create groups sequentially to avoid race conditions
   groups.forEach((group, index) => {
     setTimeout(() => {
-      console.log(`Processing group: ${group.suggestedName} with ${group.tabIds.length} tabs`);
+      console.log(`Creating group: ${group.suggestedName} with ${group.tabIds.length} tabs`);
       chrome.tabs.group({ tabIds: group.tabIds }, (groupId) => {
         if (!chrome.runtime.lastError && groupId) {
+          // Update group with title, color, and collapsed state
           chrome.tabGroups.update(groupId, {
             title: group.suggestedName,
-            color: getGroupColor(group.type)
+            color: getGroupColor(group.type),
+            collapsed: true
           }, () => {
-            // Calculate the correct position for this group
-            const firstTabId = group.tabIds[0];
-            if (firstTabId) {
-              // Find all existing groups to calculate target position
-              chrome.tabGroups.query({}, (allGroups) => {
-                // Sort groups by name after emoji prefix
-                const sortedGroups = allGroups.sort((a, b) => {
-                  const aName = a.title.replace(/^[\p{Emoji}]+ /u, '');
-                  const bName = b.title.replace(/^[\p{Emoji}]+ /u, '');
-                  return aName.localeCompare(bName);
-                });
-
-                // Find the index of the current group
-                const groupIndex = sortedGroups.findIndex(g => g.id === groupId);
-                
-                // Calculate the target tab index by summing the tab counts of all groups before it
-                let targetTabIndex = 0;
-                let processedGroups = 0;
-                
-                for (let i = 0; i < groupIndex; i++) {
-                  chrome.tabs.query({ groupId: sortedGroups[i].id }, (tabsInGroup) => {
-                    targetTabIndex += tabsInGroup.length;
-                    processedGroups++;
-                    
-                    if (processedGroups === groupIndex) {
-                      // Move the group to the correct position
-                      chrome.tabs.move(firstTabId, { index: targetTabIndex }, () => {
-                        // Ignore errors (e.g., tab already at index 0)
-                        if (chrome.runtime.lastError) {
-                          console.debug('Failed to move group:', chrome.runtime.lastError);
-                        }
-                      });
-                    }
-                  });
-                }
-                
-                if (groupIndex === 0) {
-                  // If this is the first group, move it to the beginning
-                  chrome.tabs.move(firstTabId, { index: 0 }, () => {
-                    if (chrome.runtime.lastError) {
-                      console.debug('Failed to move group:', chrome.runtime.lastError);
-                    }
-                  });
-                }
-              });
+            if (chrome.runtime.lastError) {
+              console.error(`Failed to update group ${group.suggestedName}:`, chrome.runtime.lastError);
+            } else {
+              console.log(`Group ${group.suggestedName} created and collapsed successfully`);
             }
 
             // Verify all tabs are in the group
@@ -231,17 +192,30 @@ export function createTabGroups(groups, callback) {
 
             completed++;
             if (completed === groups.length) {
-              callback({ created: groups.length, groups: results });
+              // After all groups are created, ensure they stay collapsed
+              setTimeout(() => {
+                results.forEach(result => {
+                  chrome.tabGroups.update(result.groupId, { collapsed: true }, () => {
+                    if (chrome.runtime.lastError) {
+                      console.debug(`Failed to ensure group ${result.name} stays collapsed:`, chrome.runtime.lastError);
+                    }
+                  });
+                });
+
+                // Callback after ensuring collapsed state
+                callback({ created: groups.length, groups: results });
+              }, 300); // Small delay to ensure all operations are complete
             }
           });
         } else {
+          console.error(`Failed to create group ${group.suggestedName}:`, chrome.runtime.lastError);
           completed++;
           if (completed === groups.length) {
             callback({ created: results.length, groups: results });
           }
         }
       });
-    }, index * 100);
+    }, index * 200); // Increased delay to prevent race conditions
   });
 }
 

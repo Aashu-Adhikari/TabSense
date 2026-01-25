@@ -1,18 +1,49 @@
 // src/services/emojiService.js
+import { DEFAULT_DOMAIN_SETTINGS } from '../utils/defaultDomainSettings';
 
 const STORAGE_KEY = 'custom_domain_settings';
 
 export const emojiService = {
     /**
-     * Get all custom domain settings
+     * Get all domain settings (custom + defaults merged)
      * @returns {Promise<Object>} Map of domain -> { emoji, name }
      */
     getDomainSettings: async () => {
         try {
             const result = await chrome.storage.local.get([STORAGE_KEY]);
-            return result[STORAGE_KEY] || {};
+            const customSettings = result[STORAGE_KEY] || {};
+
+            // Merge defaults with custom settings (custom overrides defaults)
+            const mergedSettings = { ...DEFAULT_DOMAIN_SETTINGS };
+
+            // Apply custom settings on top of defaults
+            for (const [domain, customSetting] of Object.entries(customSettings)) {
+                if (customSetting && Object.keys(customSetting).length > 0) {
+                    mergedSettings[domain] = { ...mergedSettings[domain], ...customSetting };
+                } else {
+                    // If custom setting is empty, remove it (fall back to default or nothing)
+                    delete mergedSettings[domain];
+                }
+            }
+
+            return mergedSettings;
         } catch (error) {
             console.error('EmojiService: Failed to get settings', error);
+            // Return defaults if storage fails
+            return { ...DEFAULT_DOMAIN_SETTINGS };
+        }
+    },
+
+    /**
+     * Get only custom domain settings (for internal use)
+     * @returns {Promise<Object>} Map of domain -> { emoji, name }
+     */
+    getCustomDomainSettings: async () => {
+        try {
+            const result = await chrome.storage.local.get([STORAGE_KEY]);
+            return result[STORAGE_KEY] || {};
+        } catch (error) {
+            console.error('EmojiService: Failed to get custom settings', error);
             return {};
         }
     },
@@ -66,5 +97,15 @@ export const emojiService = {
 
     removeCustomEmoji: async (domain) => {
         return emojiService.setDomainSetting(domain, { emoji: null });
+    },
+
+    /**
+     * Get effective settings for a specific domain (merged defaults + custom)
+     * @param {string} domain - The domain to get settings for
+     * @returns {Promise<Object>} Settings object with emoji and name
+     */
+    getDomainSettingsForDomain: async (domain) => {
+        const allSettings = await emojiService.getDomainSettings();
+        return allSettings[domain] || {};
     }
 };
