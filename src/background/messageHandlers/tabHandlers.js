@@ -102,7 +102,7 @@ export function handleGetGroupsWithTabs(request, sendResponse) {
       
       // Convert groupMap to array, filter out empty groups
       const groupList = Object.values(groupMap).filter(g => g.tabs.length > 0);
-      
+
       console.log('Background: Returning', groupList.length, 'groups and', ungroupedTabs.length, 'ungrouped tabs');
       
       sendResponse({ 

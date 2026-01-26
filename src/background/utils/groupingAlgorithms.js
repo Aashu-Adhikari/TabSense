@@ -7,29 +7,35 @@ export function groupTabsByDomain(tabs, domainSettings = {}) {
   tabs.forEach(tab => {
     try {
       const domain = new URL(tab.url).hostname.replace('www.', '');
-      if (!groups[domain]) {
-        groups[domain] = {
+      const windowId = tab.windowId;
+      const key = `${windowId}_${domain}`;
+
+      if (!groups[key]) {
+        groups[key] = {
           tabIds: [],
           tabs: [],
           suggestedName: getFriendlyDomainName(domain, domainSettings),
           confidence: 'high',
-          type: 'domain'
+          type: 'domain',
+          windowId: windowId
         };
-        console.log(`Created new group for domain: ${domain}`);
+        console.log(`Created new group for domain: ${domain} in window: ${windowId}`);
       }
-      groups[domain].tabIds.push(tab.id);
-      groups[domain].tabs.push(tab);
-      console.log(`Added tab to domain group ${domain}:`, tab.title);
+      groups[key].tabIds.push(tab.id);
+      groups[key].tabs.push(tab);
+      console.log(`Added tab to domain group ${domain} in window ${windowId}:`, tab.title);
     } catch (error) {
       console.error('Error grouping tab:', error, tab);
-      const key = 'unknown';
+      const windowId = tab.windowId;
+      const key = `${windowId}_unknown`;
       if (!groups[key]) {
         groups[key] = {
           tabIds: [],
           tabs: [],
           suggestedName: 'Other Tabs',
           confidence: 'medium',
-          type: 'unknown'
+          type: 'unknown',
+          windowId: windowId
         };
       }
       groups[key].tabIds.push(tab.id);
@@ -43,12 +49,7 @@ export function groupTabsByDomain(tabs, domainSettings = {}) {
     console.log(`Group: ${group.suggestedName} has ${group.tabIds.length} tabs`);
     console.log(`Tabs:`, group.tabs.map(t => t.title));
   });
-  
-  filtered.sort((a, b) => {
-    const aName = a.suggestedName.replace(/^[\p{Emoji}]+ /u, '');
-    const bName = b.suggestedName.replace(/^[\p{Emoji}]+ /u, '');
-    return aName.localeCompare(bName);
-  });
+
   return filtered;
 }
 
@@ -72,17 +73,19 @@ export function groupTabsByContent(tabs) {
   tabs.forEach(tab => {
     let categorized = false;
     const title = tab.title.toLowerCase();
+    const windowId = tab.windowId;
 
     for (const { pattern, category, emoji } of contentPatterns) {
       if (pattern.test(title) || pattern.test(tab.url.toLowerCase())) {
-        const key = category;
+        const key = `${windowId}_${category}`;
         if (!groups[key]) {
           groups[key] = {
             tabIds: [],
             tabs: [],
             suggestedName: `${emoji} ${category}`,
             confidence: 'medium',
-            type: 'content'
+            type: 'content',
+            windowId: windowId
           };
         }
         groups[key].tabIds.push(tab.id);
@@ -93,26 +96,23 @@ export function groupTabsByContent(tabs) {
     }
 
     if (!categorized) {
-      uncategorized.push(tab);
+      const key = `${windowId}_uncategorized`;
+      if (!groups[key]) {
+        groups[key] = {
+          tabIds: [],
+          tabs: [],
+          suggestedName: '📋 General Browsing',
+          confidence: 'low',
+          type: 'general',
+          windowId: windowId
+        };
+      }
+      groups[key].tabIds.push(tab.id);
+      groups[key].tabs.push(tab);
     }
   });
 
-  if (uncategorized.length > 0) {
-    groups['uncategorized'] = {
-      tabIds: uncategorized.map(t => t.id),
-      tabs: uncategorized,
-      suggestedName: '📋 General Browsing',
-      confidence: 'low',
-      type: 'general'
-    };
-  }
-
   const filtered = Object.values(groups);
-  filtered.sort((a, b) => {
-    const aName = a.suggestedName.replace(/^[\p{Emoji}]+ /u, '');
-    const bName = b.suggestedName.replace(/^[\p{Emoji}]+ /u, '');
-    return aName.localeCompare(bName);
-  });
   return filtered;
 }
 
@@ -131,12 +131,62 @@ export function mergeGroupingStrategies(domainGroups, contentGroups) {
     }
   });
 
-  merged.sort((a, b) => {
-    const aName = a.suggestedName.replace(/^[\p{Emoji}]+ /u, '');
-    const bName = b.suggestedName.replace(/^[\p{Emoji}]+ /u, '');
+  return merged;
+}
+
+/**
+ * Sorts an array of groups alphabetically by title, ignoring emoji prefixes.
+ * @param {Array} groups - Array of group objects (from chrome.tabGroups.query or processed)
+ * @returns {Array} - Sorted array
+ */
+export function sortGroupsAlphabetically(groups) {
+  return [...groups].sort((a, b) => {
+    const aTitle = a.title || a.suggestedName || '';
+    const bTitle = b.title || b.suggestedName || '';
+    const aName = aTitle.replace(/^[\p{Emoji}]+ /u, '').trim();
+    const bName = bTitle.replace(/^[\p{Emoji}]+ /u, '').trim();
     return aName.localeCompare(bName);
   });
-  return merged;
+}
+
+/**
+ * Reorders all tab groups in the browser to be in alphabetical order, per window.
+ */
+export async function reorderGroupsInBrowser() {
+  try {
+    const groups = await new Promise(resolve => chrome.tabGroups.query({}, resolve));
+    if (groups.length <= 1) return;
+
+    // Group groups by windowId
+    const groupsByWindow = {};
+    groups.forEach(group => {
+      if (!groupsByWindow[group.windowId]) {
+        groupsByWindow[group.windowId] = [];
+      }
+      groupsByWindow[group.windowId].push(group);
+    });
+
+    for (const windowId in groupsByWindow) {
+      const windowGroups = groupsByWindow[windowId];
+      if (windowGroups.length <= 1) continue;
+
+      const sortedGroups = sortGroupsAlphabetically(windowGroups);
+      
+      // Calculate target positions within this window
+      let currentTabIndex = 0;
+      for (const group of sortedGroups) {
+        const groupTabs = await new Promise(resolve => chrome.tabs.query({ groupId: group.id, windowId: parseInt(windowId) }, resolve));
+        if (groupTabs.length > 0) {
+          // Move the first tab of the group to the currentTabIndex
+          await new Promise(resolve => chrome.tabs.move(groupTabs[0].id, { index: currentTabIndex }, resolve));
+          currentTabIndex += groupTabs.length;
+        }
+      }
+    }
+    console.log('Background: Reordered groups in browser alphabetically per window.');
+  } catch (error) {
+    console.error('Background: Failed to reorder groups in browser:', error);
+  }
 }
 
 export function createTabGroups(groups, callback) {

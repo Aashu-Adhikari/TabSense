@@ -232,20 +232,25 @@ export function handleMlAutoGroupAllTabs(request, sendResponse) {
                       if (completed === mlGroups.length) {
                         // Ensure all groups stay collapsed after creation
                         setTimeout(() => {
-                          createdGroups.forEach(createdGroup => {
-                            chrome.tabGroups.update(createdGroup.groupId, { collapsed: true }, () => {
-                              if (chrome.runtime.lastError) {
-                                console.debug(`Failed to ensure AI group ${createdGroup.name} stays collapsed:`, chrome.runtime.lastError);
-                              }
+                          const collapsePromises = createdGroups.map(createdGroup => {
+                            return new Promise(resolve => {
+                              chrome.tabGroups.update(createdGroup.groupId, { collapsed: true }, () => {
+                                if (chrome.runtime.lastError) {
+                                  console.debug(`Failed to ensure AI group ${createdGroup.name} stays collapsed:`, chrome.runtime.lastError);
+                                }
+                                resolve();
+                              });
                             });
                           });
 
-                          sendResponse({
-                            success: true,
-                            message: `Created ${createdGroups.length} AI-powered groups`,
-                            groupsCreated: createdGroups.length,
-                            totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
-                            groups: createdGroups
+                          Promise.all(collapsePromises).then(() => {
+                            sendResponse({
+                              success: true,
+                              message: `Created ${createdGroups.length} AI-powered groups`,
+                              groupsCreated: createdGroups.length,
+                              totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
+                              groups: createdGroups
+                            });
                           });
                         }, 300);
                       }

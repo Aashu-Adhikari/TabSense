@@ -88,41 +88,61 @@ chrome.tabs.onDetached.addListener(updateTabCache);
 
 // Track tab activity
 const activeTabTimers = new Map();
-let previousActiveTabId = null; // Track previous active tab manually
+let currentActiveTabId = null; // Track current active tab
 const ACTIVITY_TIMEOUT = 5000; // 5 seconds of inactivity to trigger grouping
+
+// Function to set timers for all inactive ungrouped tabs
+async function setTimersForInactiveUngroupedTabs() {
+  try {
+    const allTabs = await new Promise(resolve => chrome.tabs.query({}, resolve));
+    const ungroupedTabs = allTabs.filter(tab =>
+      tab.id !== currentActiveTabId &&
+      (tab.groupId === -1 || tab.groupId === undefined) &&
+      shouldAutoGroupTab(tab)
+    );
+
+    // Clear existing timers for tabs that are no longer ungrouped or active
+    for (const [tabId, timer] of activeTabTimers) {
+      const tab = allTabs.find(t => t.id === tabId);
+      if (!tab || tab.groupId !== -1 || tab.id === currentActiveTabId) {
+        clearTimeout(timer);
+        activeTabTimers.delete(tabId);
+      }
+    }
+
+    // Set timers for inactive ungrouped tabs
+    ungroupedTabs.forEach(tab => {
+      if (!activeTabTimers.has(tab.id)) {
+        console.log('Background: Setting timer for inactive ungrouped tab:', tab.title);
+        const timer = setTimeout(async () => {
+          await autoGroupTab(tab);
+          activeTabTimers.delete(tab.id);
+        }, ACTIVITY_TIMEOUT);
+        activeTabTimers.set(tab.id, timer);
+      }
+    });
+  } catch (error) {
+    console.error('Background: Error setting timers for inactive tabs:', error);
+  }
+}
 
 // When user activates a tab
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   console.log('Background: Tab activated:', activeInfo.tabId);
-  
-  // If there was a previous active tab, it's now deactivated
-  if (previousActiveTabId && previousActiveTabId !== activeInfo.tabId) {
-    try {
-      const previousTab = await new Promise(resolve => chrome.tabs.get(previousActiveTabId, resolve));
-      
-      if (previousTab && previousTab.groupId === -1) {
-        console.log('Background: User stopped working on tab:', previousTab.title);
-        
-        // Set a timer to group the tab after inactivity
-        const timer = setTimeout(async () => {
-          await autoGroupTab(previousTab);
-          activeTabTimers.delete(previousTab.id);
-        }, ACTIVITY_TIMEOUT);
-        
-        activeTabTimers.set(previousTab.id, timer);
-      }
-    } catch (error) {
-      console.error('Background: Error getting previous active tab:', error);
-    }
-  }
-  
+
   // Clear any existing timer for the newly activated tab
   if (activeTabTimers.has(activeInfo.tabId)) {
     clearTimeout(activeTabTimers.get(activeInfo.tabId));
     activeTabTimers.delete(activeInfo.tabId);
     console.log('Background: Cleared timer for newly activated tab');
   }
-  
+
+  // Update current active tab reference
+  currentActiveTabId = activeInfo.tabId;
+
+  // Set timers for all other inactive ungrouped tabs
+  await setTimersForInactiveUngroupedTabs();
+
   // Get the tab info and log
   try {
     const currentTab = await new Promise(resolve => chrome.tabs.get(activeInfo.tabId, resolve));
@@ -130,9 +150,6 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   } catch (error) {
     console.error('Background: Error getting current tab info:', error);
   }
-  
-  // Update previous active tab reference
-  previousActiveTabId = activeInfo.tabId;
 });
 
 // Also handle case when user closes a tab or navigates away from a tab
@@ -143,14 +160,32 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   }
 });
 
+// Clear timers when tabs are grouped
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
+  if (changeInfo.groupId !== undefined && changeInfo.groupId !== -1) {
+    // Tab was grouped, clear its timer
+    if (activeTabTimers.has(tabId)) {
+      clearTimeout(activeTabTimers.get(tabId));
+      activeTabTimers.delete(tabId);
+      console.log('Background: Cleared timer for grouped tab:', tabId);
+    }
+  }
+});
+
 chrome.tabGroups.onCreated.addListener(updateTabCache);
 chrome.tabGroups.onRemoved.addListener(updateTabCache);
 chrome.tabGroups.onUpdated.addListener(updateTabCache);
 chrome.tabGroups.onMoved.addListener(updateTabCache);
 
 // Create an initial cache when the browser starts or the extension is installed/updated
-chrome.runtime.onStartup.addListener(updateTabCache);
-chrome.runtime.onInstalled.addListener(updateTabCache);
+chrome.runtime.onStartup.addListener(async () => {
+  await updateTabCache();
+  await setTimersForInactiveUngroupedTabs();
+});
+chrome.runtime.onInstalled.addListener(async () => {
+  await updateTabCache();
+  await setTimersForInactiveUngroupedTabs();
+});
 
 // =================================================================
 // ===== AUTO-GROUPING LOGIC =======================================

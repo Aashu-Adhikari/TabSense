@@ -46,7 +46,7 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COM
   const [loading, setLoading] = useState(false);
 
   // Auto-grouping settings
-  const [autoGroupingEnabled, setAutoGroupingEnabled] = useState(false);
+  const [autoGroupingEnabled, setAutoGroupingEnabled] = useState(true);
   const [autoGroupingMethod, setAutoGroupingMethod] = useState('domain');
 
   // Determine which components to show

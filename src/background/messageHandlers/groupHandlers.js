@@ -10,20 +10,25 @@ export async function handleFindOrCreateGroupAndAddTab(request, sendResponse) {
   const { tabId, categoryName, categoryEmoji, groupTitle } = request;
 
   try {
-    const allGroups = await new Promise(resolve => chrome.tabGroups.query({}, resolve));
+    // Get the tab's windowId first
+    const tab = await new Promise(resolve => chrome.tabs.get(tabId, resolve));
+    if (!tab) throw new Error("Tab not found");
+    const windowId = tab.windowId;
+
+    const allGroups = await new Promise(resolve => chrome.tabGroups.query({ windowId }, resolve));
     const targetTitle = groupTitle || `${categoryEmoji} ${categoryName}`;
     
-    console.log('Finding or creating group for title:', targetTitle);
-    console.log('Existing groups:', allGroups.map(g => g.title));
+    console.log('Finding or creating group for title:', targetTitle, 'in window:', windowId);
+    console.log('Existing groups in window:', allGroups.map(g => g.title));
     
     let targetGroup = allGroups.find(group => group.title === targetTitle);
 
     if (targetGroup) {
-      // Group already exists, just add the tab to it.
+      // Group already exists in this window, just add the tab to it.
       await new Promise(resolve => chrome.tabs.group({ tabIds: [tabId], groupId: targetGroup.id }, resolve));
       sendResponse({ success: true, groupId: targetGroup.id, created: false });
     } else {
-      // Group does not exist, create it first, then name it.
+      // Group does not exist in this window, create it first, then name it.
       const newGroupId = await new Promise(resolve => chrome.tabs.group({ tabIds: [tabId] }, resolve));
       await new Promise(resolve => {
         chrome.tabGroups.update(newGroupId, {
@@ -32,30 +37,6 @@ export async function handleFindOrCreateGroupAndAddTab(request, sendResponse) {
           collapsed: true
         }, resolve);
       });
-
-      // Position the new group correctly for alphabetical order in browser header
-      const updatedAllGroups = await new Promise(resolve => chrome.tabGroups.query({}, resolve));
-      // Sort groups by name after the emoji prefix
-      const groupsInOrder = updatedAllGroups.sort((a, b) => {
-        const aName = a.title.replace(/^[\p{Emoji}]+ /u, '');
-        const bName = b.title.replace(/^[\p{Emoji}]+ /u, '');
-        return aName.localeCompare(bName);
-      });
-      const newGroupIndex = groupsInOrder.findIndex(group => group.id === newGroupId);
-      
-      // Move the new group to the correct position
-      // Find the first tab of the new group to move
-      const newGroupTabs = await new Promise(resolve => chrome.tabs.query({ groupId: newGroupId }, resolve));
-      if (newGroupTabs.length > 0) {
-        // Calculate target index: sum of tab counts of all groups before newGroupIndex
-        let targetTabIndex = 0;
-        for (let i = 0; i < newGroupIndex; i++) {
-          const groupTabs = await new Promise(resolve => chrome.tabs.query({ groupId: groupsInOrder[i].id }, resolve));
-          targetTabIndex += groupTabs.length;
-        }
-        // Move the first tab of the new group to the target index to position the whole group
-        await new Promise(resolve => chrome.tabs.move(newGroupTabs[0].id, { index: targetTabIndex }, resolve));
-      }
 
       sendResponse({ success: true, groupId: newGroupId, created: true });
     }

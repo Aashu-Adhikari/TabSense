@@ -332,49 +332,43 @@ class TabClassifier {
       const classifications = await Promise.all(
         ungroupedTabs.map(async (tab) => this.classifyTab(tab.title, tab.url).then(classification => ({ tab, classification })))
       );
-
-      const validTabs = classifications.filter(item =>
+      
+      const validTabs = classifications.filter(item => 
         item.classification.confidence >= confidenceThreshold
       );
 
       const categoryGroups = {};
       validTabs.forEach(({ tab, classification }) => {
         const category = classification.category;
-        if (!categoryGroups[category]) categoryGroups[category] = { tabs: [], totalConfidence: 0 };
-        categoryGroups[category].tabs.push(tab);
-        categoryGroups[category].totalConfidence += classification.confidence;
+        const windowId = tab.windowId;
+        const key = `${windowId}_${category}`;
+        
+        if (!categoryGroups[key]) {
+          categoryGroups[key] = { 
+            tabs: [], 
+            totalConfidence: 0,
+            category: category,
+            windowId: windowId
+          };
+        }
+        categoryGroups[key].tabs.push(tab);
+        categoryGroups[key].totalConfidence += classification.confidence;
       });
 
       const finalGroups = Object.values(categoryGroups)
         .map(group => ({
           ...group,
-          category: group.tabs[0] ? validTabs.find(t=>t.tab.id === group.tabs[0].id).classification.category : 'General Browsing',
           avgConfidence: group.totalConfidence / group.tabs.length
         }))
         .filter(group => group.tabs.length >= minGroupSize)
         .sort((a, b) => b.tabs.length - a.tabs.length)
         .slice(0, maxGroups);
 
-      // Collect all tab IDs that were grouped
-      const groupedTabIds = new Set(finalGroups.flatMap(group => group.tabs.map(tab => tab.id)));
-
-      // Find tabs that weren't grouped (either low confidence or single tabs)
-      const ungroupedTabIds = ungroupedTabs
-        .filter(tab => !groupedTabIds.has(tab.id))
-        .map(tab => tab.id);
-
-      // If there are ungrouped tabs, create a General Browsing group
       const namedGroups = finalGroups.map(group => ({
         name: `${this.getCategoryEmoji(group.category)} ${group.category}`,
-        tabIds: group.tabs.map(tab => tab.id)
+        tabIds: group.tabs.map(tab => tab.id),
+        windowId: group.windowId
       }));
-
-      if (ungroupedTabIds.length > 0) {
-        namedGroups.push({
-          name: `${this.getCategoryEmoji('General Browsing')} General Browsing`,
-          tabIds: ungroupedTabIds
-        });
-      }
 
       return { success: true, groups: namedGroups };
 

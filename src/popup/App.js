@@ -395,7 +395,10 @@ function App() {
 
                       {groups.length > 0 && (
                         <optgroup label="Existing">
-                          {groups.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+                          {groups
+                            .filter(g => g.windowId === tab.windowId)
+                            .map(g => <option key={g.id} value={g.id}>{g.title}</option>)
+                          }
                         </optgroup>
                       )}
                       <optgroup label="AI Categories">
