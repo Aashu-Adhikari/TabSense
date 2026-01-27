@@ -335,8 +335,16 @@
   font-style: italic;
 }
 
-/* Copy and Export Buttons */
-.copy-message-btn {
+/* Message Actions */
+.message-actions {
+  display: flex;
+  gap: 0.25rem;
+  align-self: flex-end;
+  margin-top: 0.25rem;
+}
+
+/* Copy, Clear and Export Buttons */
+.copy-message-btn, .regenerate-btn, .clear-chat-btn, .export-chat-btn {
   background: none;
   border: none;
   font-size: 0.8rem;
@@ -345,13 +353,21 @@
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   transition: all 0.2s;
-  align-self: flex-end;
-  margin-top: 0.25rem;
 }
 
-.copy-message-btn:hover {
+.copy-message-btn:hover, .regenerate-btn:hover:not(:disabled), .clear-chat-btn:hover, .export-chat-btn:hover {
   color: #3b82f6;
   background: #f1f5f9;
+}
+
+.regenerate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clear-chat-btn:hover {
+  color: #dc2626;
+  background: #fef2f2;
 }
 
 .export-chat-btn {

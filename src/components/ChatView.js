@@ -1,10 +1,63 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { chromeApi } from '../services/chromeApi';
 import SettingsView, { COMPONENT_FILTERS } from './SettingsView';
 import Button from './common/Button';
 import '../popup/chat.css';
+
+// Chat storage utilities
+const CHAT_STORAGE_PREFIX = 'chat_';
+const CHAT_STORAGE_VERSION = 1;
+
+const getChatStorageKey = (tab, group) => {
+  if (tab) return `${CHAT_STORAGE_PREFIX}tab_${tab.id}`;
+  if (group) return `${CHAT_STORAGE_PREFIX}group_${group.id}`;
+  return null;
+};
+
+const saveChatState = async (tab, group, state) => {
+  const key = getChatStorageKey(tab, group);
+  if (!key) return;
+
+  const dataToSave = {
+    ...state,
+    timestamp: Date.now(),
+    version: CHAT_STORAGE_VERSION
+  };
+
+  try {
+    await chrome.storage.local.set({ [key]: dataToSave });
+    console.log('ChatView: Saved chat state for', key, 'messages:', dataToSave.messages?.length || 0);
+  } catch (error) {
+    console.warn('Failed to save chat state:', error);
+  }
+};
+
+const loadChatState = async (tab, group) => {
+  const key = getChatStorageKey(tab, group);
+  if (!key) return null;
+
+  try {
+    const result = await chrome.storage.local.get([key]);
+    console.log('ChatView: Loaded chat state for', key, 'found:', !!result[key], 'messages:', result[key]?.messages?.length || 0);
+    return result[key] || null;
+  } catch (error) {
+    console.warn('Failed to load chat state:', error);
+    return null;
+  }
+};
+
+const clearChatState = async (tab, group) => {
+  const key = getChatStorageKey(tab, group);
+  if (!key) return;
+
+  try {
+    await chrome.storage.local.remove([key]);
+  } catch (error) {
+    console.warn('Failed to clear chat state:', error);
+  }
+};
 
 // Copy to clipboard function
 const copyToClipboard = async (text) => {
@@ -127,22 +180,64 @@ const ChatView = ({ tab, group, onBack }) => {
   const [input, setInput] = useState('');
   const [context, setContext] = useState('');
   const [tabMetadata, setTabMetadata] = useState([]); // Store tab IDs for citations
-  
+  const [lastUserMessage, setLastUserMessage] = useState(null); // Store last user message for retry
+
   // UI State
   const [status, setStatus] = useState('initializing');
   
   const messagesEndRef = useRef(null);
   const aiResponseBufferRef = useRef('');
+  const saveTimeoutRef = useRef(null);
 
   const targetTitle = tab ? tab.title : (group ? group.title : "Context");
 
+  // Debounced save function
+  const debouncedSave = useCallback((state) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveChatState(tab, group, state);
+    }, 1000); // Save after 1 second of inactivity
+  }, [tab, group]);
+
   useEffect(() => {
     checkConfig();
+    loadSavedChatState();
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, status]);
+
+  // Auto-save when messages or context change
+  useEffect(() => {
+    console.log('ChatView: Auto-save effect triggered, messages:', messages.length, 'context length:', context.length);
+    if (messages.length > 0 || context) {
+      console.log('ChatView: Triggering debounced save');
+      debouncedSave({ messages, context, tabMetadata });
+    }
+  }, [messages, context, tabMetadata, debouncedSave]);
+
+  const loadSavedChatState = async () => {
+    console.log('ChatView: Loading saved chat state for tab/group:', tab?.id, group?.id);
+    const savedState = await loadChatState(tab, group);
+    if (savedState && savedState.version === CHAT_STORAGE_VERSION) {
+      console.log('ChatView: Restoring saved state with', savedState.messages?.length || 0, 'messages');
+      setMessages(savedState.messages || []);
+      setContext(savedState.context || '');
+      setTabMetadata(savedState.tabMetadata || []);
+      // If we have saved messages, we're ready; otherwise extract content
+      if (savedState.messages && savedState.messages.length > 0) {
+        setStatus('ready');
+        console.log('ChatView: Set status to ready with saved messages');
+      } else {
+        console.log('ChatView: No saved messages, will extract content');
+      }
+    } else {
+      console.log('ChatView: No valid saved state found');
+    }
+  };
 
   const checkConfig = async () => {
     const response = await chromeApi.getLLMConfig();
@@ -217,6 +312,7 @@ const ChatView = ({ tab, group, onBack }) => {
 
     const userMsg = { role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
+    setLastUserMessage(userMsg); // Store for retry
     setInput('');
     setStatus('thinking');
 
@@ -246,7 +342,58 @@ const ChatView = ({ tab, group, onBack }) => {
       },
       onError: (errText) => {
         console.error("Stream error:", errText);
-        setMessages(prev => [...prev, { role: 'assistant', content: `**Error:** ${errText}` }]);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: `**Error:** ${errText}`,
+          isError: true // Mark as error message for special rendering
+        }]);
+        setStatus('ready');
+      }
+    });
+  };
+
+  const handleRegenerate = async () => {
+    if (!lastUserMessage || status === 'thinking') return;
+
+    // Remove the error message from the end
+    setMessages(prev => prev.filter((msg, index) => {
+      // Remove the last assistant message if it's an error
+      if (index === prev.length - 1 && msg.role === 'assistant' && msg.isError) {
+        return false;
+      }
+      return true;
+    }));
+
+    setStatus('thinking');
+
+    const recentHistory = messages.slice(-10);
+    const apiMessages = [...recentHistory, lastUserMessage];
+
+    // Start the stream again
+    chromeApi.connectChatStream(apiMessages, context, {
+      onChunk: (text) => {
+        aiResponseBufferRef.current += text;
+        setMessages(prev => {
+          const newMessages = [...prev];
+          if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+            newMessages[newMessages.length - 1].content = aiResponseBufferRef.current;
+          } else {
+            newMessages.push({ role: 'assistant', content: aiResponseBufferRef.current });
+          }
+          return [...newMessages];
+        });
+      },
+      onEnd: () => {
+        console.log("Stream finished successfully");
+        setStatus('ready');
+      },
+      onError: (errText) => {
+        console.error("Stream error:", errText);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: `**Error:** ${errText}`,
+          isError: true
+        }]);
         setStatus('ready');
       }
     });
@@ -297,19 +444,40 @@ const ChatView = ({ tab, group, onBack }) => {
           {group ? '📁 ' : ''}{targetTitle}
         </span>
         {messages.length > 0 && (
-          <button
-            className="export-chat-btn"
-            onClick={() => {
-              const transcript = messages.map(msg => {
-                const role = msg.role === 'user' ? 'You' : 'AI';
-                return `${role}: ${msg.content}`;
-              }).join('\n\n');
-              copyToClipboard(transcript);
-            }}
-            title="Export chat transcript"
-          >
-            📄
-          </button>
+          <>
+            <button
+              className="clear-chat-btn"
+              onClick={async () => {
+                if (confirm('Clear this chat history? This cannot be undone.')) {
+                  setMessages([]);
+                  setContext('');
+                  setTabMetadata([]);
+                  setLastUserMessage(null);
+                  await clearChatState(tab, group);
+                  // Re-extract content for fresh start
+                  if (status !== 'initializing') {
+                    extractContent();
+                  }
+                }
+              }}
+              title="Clear chat history"
+            >
+              🗑️
+            </button>
+            <button
+              className="export-chat-btn"
+              onClick={() => {
+                const transcript = messages.map(msg => {
+                  const role = msg.role === 'user' ? 'You' : 'AI';
+                  return `${role}: ${msg.content}`;
+                }).join('\n\n');
+                copyToClipboard(transcript);
+              }}
+              title="Export chat transcript"
+            >
+              📄
+            </button>
+          </>
         )}
         <button 
           className="settings-btn" 
@@ -394,13 +562,25 @@ const ChatView = ({ tab, group, onBack }) => {
               })()}
             </div>
             {m.role === 'assistant' && (
-              <button
-                className="copy-message-btn"
-                onClick={() => copyToClipboard(m.content)}
-                title="Copy message"
-              >
-                📋
-              </button>
+              <div className="message-actions">
+                {m.isError && lastUserMessage && (
+                  <button
+                    className="regenerate-btn"
+                    onClick={handleRegenerate}
+                    title="Regenerate response"
+                    disabled={status === 'thinking'}
+                  >
+                    🔄
+                  </button>
+                )}
+                <button
+                  className="copy-message-btn"
+                  onClick={() => copyToClipboard(m.content)}
+                  title="Copy message"
+                >
+                  📋
+                </button>
+              </div>
             )}
           </div>
         ))}

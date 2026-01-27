@@ -28,13 +28,14 @@ const PRESETS = {
 export const SETTING_COMPONENTS = {
   LLM_API: 'llm_api',
   AUTO_GROUPING: 'auto_grouping',
+  CHAT_HISTORY: 'chat_history',
   // Add more components here as they are developed
 };
 
 // Component filter presets
 export const COMPONENT_FILTERS = {
   ALL: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING],
-  CHAT: [SETTING_COMPONENTS.LLM_API], // Only LLM API settings for chat interface
+  CHAT: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY], // LLM API and chat history settings for chat interface
   HEADER: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING], // Same as ALL for now
 };
 
@@ -49,9 +50,13 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COM
   const [autoGroupingEnabled, setAutoGroupingEnabled] = useState(true);
   const [autoGroupingMethod, setAutoGroupingMethod] = useState('domain');
 
+  // Chat history settings
+  const [chatRetentionHours, setChatRetentionHours] = useState(24);
+
   // Determine which components to show
   const showLLMSettings = enabledComponents.includes(SETTING_COMPONENTS.LLM_API);
   const showAutoGrouping = enabledComponents.includes(SETTING_COMPONENTS.AUTO_GROUPING);
+  const showChatHistory = enabledComponents.includes(SETTING_COMPONENTS.CHAT_HISTORY);
 
   // Load existing settings if editing
   useEffect(() => {
@@ -73,6 +78,14 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COM
           const settings = result.auto_grouping_settings || {};
           setAutoGroupingEnabled(settings.enabled || false);
           setAutoGroupingMethod(settings.method || 'domain');
+        });
+      }
+
+      if (showChatHistory) {
+        // Load chat history settings
+        chrome.storage.local.get(['chat_history_settings']).then(result => {
+          const settings = result.chat_history_settings || {};
+          setChatRetentionHours(settings.retentionHours || 24);
         });
       }
     }
@@ -102,6 +115,14 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COM
         method: autoGroupingMethod
       };
       await chrome.storage.local.set({ auto_grouping_settings: autoGroupingSettings });
+    }
+
+    // Save chat history settings if component is enabled
+    if (showChatHistory) {
+      const chatHistorySettings = {
+        retentionHours: chatRetentionHours
+      };
+      await chrome.storage.local.set({ chat_history_settings: chatHistorySettings });
     }
 
     setLoading(false);
@@ -203,6 +224,29 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COM
               </select>
             </div>
           )}
+        </>
+      )}
+
+      {/* Show Chat History settings only if component is enabled */}
+      {showChatHistory && (
+        <>
+          <h3>💬 Chat History Settings</h3>
+
+          <div className="form-group">
+            <label>Chat History Retention (hours)</label>
+            <input
+              type="number"
+              min="1"
+              max="24"
+              value={chatRetentionHours}
+              onChange={(e) => setChatRetentionHours(Math.min(24, Math.max(1, parseInt(e.target.value) || 1)))}
+              className="settings-input"
+              placeholder="24"
+            />
+            <p className="settings-hint">
+              Chat conversations older than this will be automatically deleted to save storage space. Maximum 24 hours.
+            </p>
+          </div>
         </>
       )}
 

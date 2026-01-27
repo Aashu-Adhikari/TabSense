@@ -177,14 +177,64 @@ chrome.tabGroups.onRemoved.addListener(updateTabCache);
 chrome.tabGroups.onUpdated.addListener(updateTabCache);
 chrome.tabGroups.onMoved.addListener(updateTabCache);
 
+// Chat history management
+const CHAT_STORAGE_PREFIX = 'chat_';
+
+// Function to purge old chat histories
+async function purgeOldChatHistories() {
+  try {
+    console.log('Background: Checking for old chat histories to purge...');
+
+    // Load retention settings
+    const settings = await chrome.storage.local.get(['chat_history_settings']);
+    const retentionHours = (settings.chat_history_settings && settings.chat_history_settings.retentionHours) || 24;
+
+    // Get all storage keys
+    const allStorage = await chrome.storage.local.get(null);
+    const chatKeys = Object.keys(allStorage).filter(key => key.startsWith(CHAT_STORAGE_PREFIX));
+
+    if (chatKeys.length === 0) {
+      console.log('Background: No chat histories found to purge.');
+      return;
+    }
+
+    const now = Date.now();
+    const retentionMs = retentionHours * 60 * 60 * 1000; // Convert hours to milliseconds
+    const keysToRemove = [];
+
+    for (const key of chatKeys) {
+      const chatData = allStorage[key];
+      if (chatData && chatData.timestamp) {
+        const age = now - chatData.timestamp;
+        if (age > retentionMs) {
+          keysToRemove.push(key);
+          console.log(`Background: Chat ${key} is ${Math.round(age / (60 * 60 * 1000))} hours old, marking for removal.`);
+        }
+      }
+    }
+
+    if (keysToRemove.length > 0) {
+      await chrome.storage.local.remove(keysToRemove);
+      console.log(`Background: Purged ${keysToRemove.length} old chat histories.`);
+    } else {
+      console.log('Background: No old chat histories to purge.');
+    }
+
+  } catch (error) {
+    console.error('Background: Error purging old chat histories:', error);
+  }
+}
+
 // Create an initial cache when the browser starts or the extension is installed/updated
 chrome.runtime.onStartup.addListener(async () => {
   await updateTabCache();
   await setTimersForInactiveUngroupedTabs();
+  await purgeOldChatHistories();
 });
 chrome.runtime.onInstalled.addListener(async () => {
   await updateTabCache();
   await setTimersForInactiveUngroupedTabs();
+  await purgeOldChatHistories();
 });
 
 // =================================================================
