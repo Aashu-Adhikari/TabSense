@@ -8,11 +8,12 @@ const SearchResultsView = ({
   onClearSearch,
   onAddToGroup,
   groups,
-  onOpenTab 
+  onOpenTab,
+  compact = false
 }) => {
   if (!searchResults || searchLoading) {
     return searchLoading ? (
-      <div className="loading-state">🔍 Searching...</div>
+      <div className="loading-state">{compact ? 'Searching...' : '🔍 Searching...'}</div>
     ) : null;
   }
 
@@ -35,7 +36,7 @@ const SearchResultsView = ({
     <div className="search-results-container">
       <div className="search-header">
         <h3>
-          🔍 Search Results
+          {compact ? 'Search Results' : '🔍 Search Results'}
           <span className="search-count">
             {allResults.length} match{allResults.length !== 1 ? 'es' : ''}
           </span>
@@ -51,7 +52,7 @@ const SearchResultsView = ({
       {groupedResults.length > 0 && (
         <div className="search-section">
           <div className="search-section-header">
-            <h4>📁 In Groups</h4>
+            <h4>{compact ? 'In Groups' : '📁 In Groups'}</h4>
             <span className="search-section-count">{groupedResults.length}</span>
           </div>
           <div className="search-tabs-list">
@@ -94,7 +95,7 @@ const SearchResultsView = ({
       {ungroupedResults.length > 0 && (
         <div className="search-section">
           <div className="search-section-header">
-            <h4>🔓 Ungrouped</h4>
+            <h4>{compact ? 'Ungrouped' : '🔓 Ungrouped'}</h4>
             <span className="search-section-count">{ungroupedResults.length}</span>
           </div>
           <div className="search-tabs-list">

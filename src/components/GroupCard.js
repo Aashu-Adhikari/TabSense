@@ -13,7 +13,16 @@ const GroupCard = ({
   onChatWithGroup,
   domainSettings = {},
   onSaveDomainSetting,
-  onRename
+  onRename,
+  showChatShortcut = false,
+  compactLabels = false,
+  chatShortcutIcon = null,
+  draggable = false,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  extraClassName = ''
 }) => {
   const [renamingGroup, setRenamingGroup] = useState(null);
   const [newGroupName, setNewGroupName] = useState('');
@@ -45,6 +54,18 @@ const GroupCard = ({
   };
 
   const colorEmoji = getColorEmoji(group.color);
+  const colorMap = {
+    grey: '#9ca3af',
+    blue: '#60a5fa',
+    red: '#f87171',
+    yellow: '#facc15',
+    green: '#34d399',
+    pink: '#f472b6',
+    purple: '#a78bfa',
+    cyan: '#38bdf8',
+    orange: '#fb923c'
+  };
+  const colorDot = colorMap[group.color] || '#9ca3af';
 
   // Check if all tabs belong to the same domain
   const getHostname = (url) => {
@@ -86,8 +107,25 @@ const GroupCard = ({
     setNewDomainName('');
   };
 
+  const chatLabel = compactLabels ? 'Chat' : '🤖 Chat';
+  const emojiLabel = compactLabels ? 'Emoji' : `${customEmoji || '😀'} Set Emoji`;
+  const nameLabel = compactLabels ? 'Name' : '🏷️ Set Name';
+  const renameLabel = compactLabels ? 'Rename' : '✏️ Rename';
+  const ungroupLabel = compactLabels ? 'Ungroup' : '🗑️ Ungroup All';
+
+  const cardClassName = expanded ? 'group-card group-card--expanded' : 'group-card group-card--collapsed';
+  const combinedClassName = `${cardClassName} ${extraClassName}`.trim();
+
   return (
-    <div className="group-card" data-group-id={group.id}>
+    <div
+      className={combinedClassName}
+      data-group-id={group.id}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
       <div className="group-header" onClick={() => onToggle(group.id)}>
         <div className="group-header-left">
 
@@ -107,10 +145,12 @@ const GroupCard = ({
                 src={groupFavicon}
                 alt="Group Icon"
                 className="group-icon-favicon"
-                style={{ width: '16px', height: '16px', objectFit: 'contain' }}
+                style={{ width: '14px', height: '14px', objectFit: 'contain' }}
               />
-            ) : customEmoji ? (
+            ) : customEmoji && !compactLabels ? (
               <span className="group-custom-emoji" style={{ fontSize: '16px' }}>{customEmoji}</span>
+            ) : compactLabels ? (
+              <span className="group-color-dot" style={{ backgroundColor: colorDot }} />
             ) : (
               <span className="group-color">{colorEmoji}</span>
             )}
@@ -134,6 +174,19 @@ const GroupCard = ({
           </span>
         </div>
         <div className="group-header-right">
+          {showChatShortcut && (
+            <button
+              className="group-chat-shortcut"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChatWithGroup(group);
+              }}
+              title="Chat with group"
+              aria-label="Chat with group"
+            >
+              {chatShortcutIcon || '💬'}
+            </button>
+          )}
           <span className="group-toggle">{expanded ? '▼' : '▶'}</span>
         </div>
       </div>
@@ -181,17 +234,6 @@ const GroupCard = ({
 
           <div className="group-actions">
             {/* NEW CHAT BUTTON */}
-            <button
-              className="group-action-btn ai-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                onChatWithGroup(group);
-              }}
-              style={{ fontWeight: 'bold', color: '#4f46e5' }}
-            >
-              🤖 Chat
-            </button>
-
             {isSingleDomain && (
               <>
                 {editingDomainName ? (
@@ -218,7 +260,7 @@ const GroupCard = ({
                       }}
                       title="Set custom emoji for this domain"
                     >
-                      {customEmoji || '😀'} Set Emoji
+                      {emojiLabel}
                     </button>
                     <button
                       className="group-action-btn name-btn"
@@ -229,7 +271,7 @@ const GroupCard = ({
                       }}
                       title="Set custom name for this domain"
                     >
-                      🏷️ Set Name
+                      {nameLabel}
                     </button>
                   </>
                 )}
@@ -240,13 +282,13 @@ const GroupCard = ({
               className="group-action-btn rename-btn"
               onClick={handleStartRename}
             >
-              ✏️ Rename
+              {renameLabel}
             </button>
             <button
               className="group-action-btn ungroup-btn"
               onClick={() => onUngroupAll(group.id)}
             >
-              🗑️ Ungroup All
+              {ungroupLabel}
             </button>
           </div>
         </div>

@@ -6,12 +6,20 @@ import '../styles/components/groups.css';
 import './sidebar-chat.css';
 import { useGroups } from '../hooks/useGroups';
 import { useSearch } from '../hooks/useSearch';
+import GroupCard from '../components/GroupCard';
 import SearchResultsView from '../components/SearchResultsView';
 import Button from '../components/common/Button';
 import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView';
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView';
 import { mlCategories } from '../utils/mlCategories';
+import {
+  IconChat,
+  IconChevrons,
+  IconFolder,
+  IconRefresh,
+  IconSettings
+} from '../components/common/Icons';
 
 function SidebarApp() {
   const {
@@ -58,6 +66,8 @@ function SidebarApp() {
 
   // Sidebar View State
   const [activeView, setActiveView] = useState('explorer'); // 'explorer', 'chat', 'settings'
+  const [draggedGroupId, setDraggedGroupId] = useState(null);
+  const [dragOverGroupId, setDragOverGroupId] = useState(null);
 
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -169,6 +179,54 @@ function SidebarApp() {
     }
   };
 
+  const handleGroupDragStart = (group) => (event) => {
+    setDraggedGroupId(group.id);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(group.id));
+  };
+
+  const handleGroupDragOver = (group) => (event) => {
+    event.preventDefault();
+    if (draggedGroupId && draggedGroupId !== group.id) {
+      setDragOverGroupId(group.id);
+    }
+    event.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleGroupDragEnd = () => {
+    setDraggedGroupId(null);
+    setDragOverGroupId(null);
+  };
+
+  const handleGroupDrop = (targetGroup) => async (event) => {
+    event.preventDefault();
+    if (!draggedGroupId || draggedGroupId === targetGroup.id) {
+      handleGroupDragEnd();
+      return;
+    }
+    const draggedGroup = groups.find((group) => group.id === draggedGroupId);
+    if (!draggedGroup || draggedGroup.windowId !== targetGroup.windowId) {
+      handleGroupDragEnd();
+      return;
+    }
+    if (typeof draggedGroup.index !== 'number' || typeof targetGroup.index !== 'number') {
+      handleGroupDragEnd();
+      return;
+    }
+    try {
+      const { chromeApi } = await import('../services/chromeApi');
+      const movingDown = draggedGroup.index < targetGroup.index;
+      const adjustment = movingDown ? draggedGroup.tabs.length : 0;
+      const moveIndex = Math.max(0, targetGroup.index - adjustment);
+      const response = await chromeApi.moveTabGroup(draggedGroupId, moveIndex, targetGroup.windowId);
+      if (response?.success) {
+        fetchGroupsAndTabs();
+      }
+    } finally {
+      handleGroupDragEnd();
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && searchTerm) clearSearch();
@@ -188,14 +246,18 @@ function SidebarApp() {
         onClick={() => setActiveView('explorer')}
         title="Explorer"
       >
-        <div className="activity-bar-icon">📁</div>
+        <div className="activity-bar-icon">
+          <IconFolder className="sidebar-icon" />
+        </div>
       </div>
       <div
         className={`activity-bar-item ${activeView === 'chat' ? 'active' : ''}`}
         onClick={() => setActiveView('chat')}
         title="Chat"
       >
-        <div className="activity-bar-icon">💬</div>
+        <div className="activity-bar-icon">
+          <IconChat className="sidebar-icon" />
+        </div>
       </div>
       <div className="activity-bar-spacer" />
       <div
@@ -203,7 +265,9 @@ function SidebarApp() {
         onClick={() => setActiveView('settings')}
         title="Settings"
       >
-        <div className="activity-bar-icon">⚙️</div>
+        <div className="activity-bar-icon">
+          <IconSettings className="sidebar-icon" />
+        </div>
       </div>
     </div>
   );
@@ -219,6 +283,7 @@ function SidebarApp() {
               setTabForNewGroup(null);
               fetchGroupsAndTabs();
             }}
+            isSidebar
           />
         </div>
       );
@@ -227,13 +292,17 @@ function SidebarApp() {
     return (
       <>
         <div className="sidebar-header">
-          <span className="sidebar-header-title">EXPLORER</span>
+          <span className="sidebar-header-title">TabSynth</span>
           <div className="sidebar-header-actions">
-            <button className="sidebar-action-btn" onClick={fetchGroupsAndTabs} title="Refresh">🔄</button>
+            <button className="sidebar-action-btn" onClick={fetchGroupsAndTabs} title="Refresh">
+              <IconRefresh className="sidebar-icon sidebar-icon--small" />
+            </button>
             <button className="sidebar-action-btn" onClick={() => {
               if (expandedGroups.size === groups.length) setExpandedGroups(new Set());
               else setExpandedGroups(new Set(groups.map(g => g.id)));
-            }} title="Toggle All">↕️</button>
+            }} title="Toggle All">
+              <IconChevrons className="sidebar-icon sidebar-icon--small" />
+            </button>
           </div>
         </div>
 
@@ -242,15 +311,13 @@ function SidebarApp() {
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => { }}>
               <span className="codicon codicon-chevron-down"></span>
-              <span>Quick Actions</span>
             </div>
             <div className="sidebar-section-content">
               {currentTab && (
-                <div style={{ padding: '0 16px' }}>
+                <div className="sidebar-quick-action">
                   <Button
                     variant="primary"
                     fullWidth
-                    icon="🤖"
                     onClick={() => {
                       setActiveChatTab(currentTab);
                       setActiveView('chat');
@@ -262,7 +329,7 @@ function SidebarApp() {
                 </div>
               )}
               {ungroupedTabs.length >= 2 && (
-                <div style={{ padding: '8px 16px' }}>
+                <div className="sidebar-quick-action">
                   <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
                     <select
                       value={groupingMethod}
@@ -281,9 +348,27 @@ function SidebarApp() {
                       loading={isGrouping || mlInitializing}
                       className="sidebar-btn sidebar-btn--secondary"
                     >
-                      Group
+                      {mlInitializing ? 'Init...' : isGrouping ? 'Grouping...' : 'Group'}
                     </Button>
                   </div>
+                </div>
+              )}
+              {groups.length > 0 && (
+                <div className="sidebar-quick-action">
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={() => {
+                      if (confirm('Are you sure you want to ungroup all tabs?')) {
+                        Promise.all(groups.map(group => handleUngroupAll(group.id, true)))
+                          .then(() => fetchGroupsAndTabs())
+                          .catch(error => console.error('Error ungrouping all tabs:', error));
+                      }
+                    }}
+                    className="sidebar-btn sidebar-btn--secondary"
+                  >
+                    Ungroup All Tabs
+                  </Button>
                 </div>
               )}
             </div>
@@ -310,9 +395,10 @@ function SidebarApp() {
               searchResults={searchResults}
               searchTerm={searchTerm}
               onClearSearch={clearSearch}
-              onAddToGroup={handleAssignTabToCategory}
+              onAddToGroup={handleAddToGroup}
               groups={groups}
               onOpenTab={handleOpenTab}
+              compact
             />
           ) : (
             <>
@@ -324,55 +410,39 @@ function SidebarApp() {
                 </div>
                 <div className="sidebar-section-content">
                   {groups.length > 0 ? (
-                    groups.map(group => (
-                      <div key={group.id} className="sidebar-group-container">
-                        <div className="sidebar-group-item" onClick={() => toggleGroup(group.id)}>
-                          <span style={{ marginRight: '4px', fontSize: '10px', width: '12px', display: 'inline-block', textAlign: 'center' }}>
-                            {expandedGroups.has(group.id) ? '▼' : '▶'}
-                          </span>
-                          <div className="sidebar-group-info">
-                            <span className="sidebar-group-title">{group.title}</span>
-                          </div>
-                          <div className="sidebar-group-actions" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              className="sidebar-action-btn"
-                              onClick={() => {
-                                setActiveChatGroup(group);
-                                setActiveView('chat');
-                              }}
-                              title="Chat with group"
-                            >
-                              💬
-                            </button>
-                          </div>
-                        </div>
-                        {expandedGroups.has(group.id) && (
-                          <div className="sidebar-group-tabs">
-                            {group.tabs.map(tab => (
-                              <div key={tab.id} className="sidebar-tab-item nested-tab" onClick={() => handleOpenTab(tab.id, tab.windowId)} style={{ paddingLeft: '28px' }}>
-                                <img src={tab.favIconUrl || 'data:image/svg+xml;base64,...'} className="sidebar-tab-favicon" alt="" />
-                                <div className="sidebar-tab-info">
-                                  <div className="sidebar-tab-title">{tab.title}</div>
-                                </div>
-                                <div className="sidebar-tab-actions">
-                                  <button
-                                    className="sidebar-action-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveChatTab(tab);
-                                      setActiveView('chat');
-                                    }}
-                                    title="Chat"
-                                  >
-                                    💬
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))
+                    <div className="groups-list sidebar-groups-list">
+                      {groups.map(group => (
+                        <GroupCard
+                          key={group.id}
+                          group={group}
+                          expanded={expandedGroups.has(group.id)}
+                          onToggle={toggleGroup}
+                          onUngroupSingleTab={handleUngroupSingleTab}
+                          onUngroupAll={handleUngroupAll}
+                          onStartRename={handleStartRename}
+                          onOpenTab={handleOpenTab}
+                          onChatWithGroup={(targetGroup) => {
+                            setActiveChatGroup(targetGroup);
+                            setActiveView('chat');
+                          }}
+                          domainSettings={domainSettings}
+                          onSaveDomainSetting={handleSaveDomainSetting}
+                          onRename={handleRenameGroup}
+                          showChatShortcut
+                          compactLabels
+                          chatShortcutIcon={<IconChat className="sidebar-icon sidebar-icon--small" />}
+                          draggable
+                          onDragStart={handleGroupDragStart(group)}
+                          onDragOver={handleGroupDragOver(group)}
+                          onDrop={handleGroupDrop(group)}
+                          onDragEnd={handleGroupDragEnd}
+                          extraClassName={[
+                            draggedGroupId === group.id ? 'group-card--dragging' : '',
+                            dragOverGroupId === group.id ? 'group-card--drag-over' : ''
+                          ].join(' ').trim()}
+                        />
+                      ))}
+                    </div>
                   ) : (
                     <div className="sidebar-empty-section" style={{ padding: '8px', fontSize: '12px' }}>No groups</div>
                   )}
@@ -393,6 +463,27 @@ function SidebarApp() {
                         <div className="sidebar-tab-title">{tab.title}</div>
                       </div>
                       <div className="sidebar-tab-actions">
+                        <select
+                          className="group-select"
+                          onChange={(e) => handleAssignTabToCategory(tab, e)}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="">➕ Add to...</option>
+                          <option value="create_custom" style={{ fontWeight: 'bold', color: '#3b82f6' }}>
+                            Create New Group...
+                          </option>
+                          {groups.length > 0 && (
+                            <optgroup label="Existing">
+                              {groups
+                                .filter(g => g.windowId === tab.windowId)
+                                .map(g => <option key={g.id} value={g.id}>{g.title}</option>)
+                              }
+                            </optgroup>
+                          )}
+                          <optgroup label="AI Categories">
+                            {mlCategories.map(c => <option key={c.label} value={`ml_category--${c.label}`}>{c.label}</option>)}
+                          </optgroup>
+                        </select>
                         <button
                           className="sidebar-action-btn"
                           onClick={(e) => {
@@ -402,7 +493,7 @@ function SidebarApp() {
                           }}
                           title="Chat"
                         >
-                          💬
+                          <IconChat className="sidebar-icon sidebar-icon--small" />
                         </button>
                       </div>
                     </div>
@@ -432,6 +523,7 @@ function SidebarApp() {
               setActiveChatGroup(null);
               setActiveView('explorer');
             }}
+            isSidebar
           />
         ) : (
           <div className="sidebar-empty-section">Select a tab or group to start chatting.</div>
@@ -449,6 +541,7 @@ function SidebarApp() {
         <div className="settings-view-container">
           <SettingsView
             enabledComponents={COMPONENT_FILTERS.SIDEBAR}
+            compact
             onSaved={() => {
               fetchGroupsAndTabs();
             }}

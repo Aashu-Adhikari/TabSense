@@ -40,7 +40,15 @@ export const COMPONENT_FILTERS = {
   SIDEBAR: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY], // Sidebar-specific settings
 };
 
-const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COMPONENT_FILTERS.ALL }) => {
+const SettingsView = ({
+  onSaved,
+  onCancel,
+  isFirstSetup,
+  enabledComponents = COMPONENT_FILTERS.ALL,
+  compact = false,
+  title,
+  showBackButton = false
+}) => {
   const [provider, setProvider] = useState('free');
   const [baseUrl, setBaseUrl] = useState(PRESETS.free.baseUrl);
   const [model, setModel] = useState(PRESETS.free.model);
@@ -130,14 +138,23 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COM
     onSaved();
   };
 
+  const headerTitle = title || (compact ? 'AI Settings' : '⚙️ Settings');
+
   return (
     <div className="settings-container">
-      {/* Show LLM API settings only if component is enabled */}
-      {showLLMSettings && (
-        <>
-          <h3>⚙️ AI Settings</h3>
-          
-          <div className="form-group">
+      <div className="settings-header">
+        {showBackButton && onCancel && (
+          <button className="settings-btn-header" onClick={onCancel} aria-label="Back">
+            &larr;
+          </button>
+        )}
+        <h3 className="settings-title">{headerTitle}</h3>
+      </div>
+      <div className="settings-content">
+        {/* Show LLM API settings only if component is enabled */}
+        {showLLMSettings && (
+          <>
+            <div className="form-group">
             <label>Service Provider</label>
             <select 
               value={provider} 
@@ -189,7 +206,15 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COM
 
           {model.toLowerCase().includes('free') && (
             <div className="free-tier-notice">
-              ⚠️ <strong>Note:</strong> Free models may experience latency or rate limits. Data logging must be enabled in OpenRouter settings.
+              {compact ? (
+                <>
+                  <strong>Note:</strong> Free models may experience latency or rate limits. Data logging must be enabled in OpenRouter settings.
+                </>
+              ) : (
+                <>
+                  ⚠️ <strong>Note:</strong> Free models may experience latency or rate limits. Data logging must be enabled in OpenRouter settings.
+                </>
+              )}
             </div>
           )}
         </>
@@ -261,13 +286,25 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COM
 
       <div className="settings-actions">
         {onCancel && (
-          <Button variant="secondary" onClick={onCancel} disabled={loading}>
+          <Button
+            variant="secondary"
+            onClick={onCancel}
+            disabled={loading}
+            className={compact ? 'sidebar-btn sidebar-btn--secondary' : ''}
+          >
             Cancel
           </Button>
         )}
-        <Button variant="primary" onClick={handleSave} loading={loading} fullWidth={!onCancel}>
+        <Button
+          variant="primary"
+          onClick={handleSave}
+          loading={loading}
+          fullWidth={!onCancel}
+          className={compact ? 'sidebar-btn sidebar-btn--primary' : ''}
+        >
           Save Configuration
         </Button>
+      </div>
       </div>
     </div>
   );

@@ -95,6 +95,18 @@ class ChromeApiService {
     });
   }
 
+  // Move tab group
+  async moveTabGroup(groupId, index, windowId) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        action: "MOVE_TAB_GROUP",
+        groupId,
+        index,
+        windowId
+      }, resolve);
+    });
+  }
+
   // Search all tabs
   async searchAllTabs(searchTerm) {
     return new Promise((resolve) => {

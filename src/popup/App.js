@@ -14,6 +14,7 @@ import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView'; // <-- NEW IMPORT
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView'; // <-- NEW IMPORT
 import { mlCategories } from '../utils/mlCategories';
+import { IconChat } from '../components/common/Icons';
 
 function App() {
   const {
@@ -60,6 +61,8 @@ function App() {
 
   // ===== NEW STATE FOR SETTINGS =====
   const [showSettings, setShowSettings] = useState(false);
+  const [draggedGroupId, setDraggedGroupId] = useState(null);
+  const [dragOverGroupId, setDragOverGroupId] = useState(null);
 
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -166,6 +169,54 @@ function App() {
     }
   };
 
+  const handleGroupDragStart = (group) => (event) => {
+    setDraggedGroupId(group.id);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(group.id));
+  };
+
+  const handleGroupDragOver = (group) => (event) => {
+    event.preventDefault();
+    if (draggedGroupId && draggedGroupId !== group.id) {
+      setDragOverGroupId(group.id);
+    }
+    event.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleGroupDragEnd = () => {
+    setDraggedGroupId(null);
+    setDragOverGroupId(null);
+  };
+
+  const handleGroupDrop = (targetGroup) => async (event) => {
+    event.preventDefault();
+    if (!draggedGroupId || draggedGroupId === targetGroup.id) {
+      handleGroupDragEnd();
+      return;
+    }
+    const draggedGroup = groups.find((group) => group.id === draggedGroupId);
+    if (!draggedGroup || draggedGroup.windowId !== targetGroup.windowId) {
+      handleGroupDragEnd();
+      return;
+    }
+    if (typeof draggedGroup.index !== 'number' || typeof targetGroup.index !== 'number') {
+      handleGroupDragEnd();
+      return;
+    }
+    try {
+      const { chromeApi } = await import('../services/chromeApi');
+      const movingDown = draggedGroup.index < targetGroup.index;
+      const adjustment = movingDown ? draggedGroup.tabs.length : 0;
+      const moveIndex = Math.max(0, targetGroup.index - adjustment);
+      const response = await chromeApi.moveTabGroup(draggedGroupId, moveIndex, targetGroup.windowId);
+      if (response?.success) {
+        fetchGroupsAndTabs();
+      }
+    } finally {
+      handleGroupDragEnd();
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && searchTerm) clearSearch();
@@ -191,6 +242,8 @@ function App() {
     return (
       <SettingsView
         enabledComponents={COMPONENT_FILTERS.HEADER}
+        title="⚙️ Settings"
+        showBackButton
         onSaved={() => {
           setShowSettings(false);
           fetchGroupsAndTabs(); // Refresh in case settings affected grouping
@@ -339,20 +392,31 @@ function App() {
             <div className="groups-list">
               {groups.length > 0 ? (
                 groups.map(group => (
-                  <GroupCard
-                    key={group.id}
-                    group={group}
-                    expanded={expandedGroups.has(group.id)}
-                    onToggle={toggleGroup}
-                    onUngroupSingleTab={handleUngroupSingleTab}
-                    onUngroupAll={handleUngroupAll}
-                    onStartRename={handleStartRename}
-                    onOpenTab={handleOpenTab}
-                    onChatWithGroup={setActiveChatGroup}
-                    domainSettings={domainSettings}
-                    onSaveDomainSetting={handleSaveDomainSetting}
-                    onRename={handleRenameGroup}
-                  />
+                    <GroupCard
+                      key={group.id}
+                      group={group}
+                      expanded={expandedGroups.has(group.id)}
+                      onToggle={toggleGroup}
+                      onUngroupSingleTab={handleUngroupSingleTab}
+                      onUngroupAll={handleUngroupAll}
+                      onStartRename={handleStartRename}
+                      onOpenTab={handleOpenTab}
+                      onChatWithGroup={setActiveChatGroup}
+                      domainSettings={domainSettings}
+                      onSaveDomainSetting={handleSaveDomainSetting}
+                      onRename={handleRenameGroup}
+                      showChatShortcut
+                      chatShortcutIcon={<IconChat />}
+                      draggable
+                      onDragStart={handleGroupDragStart(group)}
+                      onDragOver={handleGroupDragOver(group)}
+                      onDrop={handleGroupDrop(group)}
+                      onDragEnd={handleGroupDragEnd}
+                      extraClassName={[
+                        draggedGroupId === group.id ? 'group-card--dragging' : '',
+                        dragOverGroupId === group.id ? 'group-card--drag-over' : ''
+                      ].join(' ').trim()}
+                    />
                 ))
               ) : (
                 <div className="empty-section">No groups yet.</div>

@@ -55,32 +55,37 @@ export function handleGetGroupsWithTabs(request, sendResponse) {
       const groupedTabIds = new Set();
       
       // Only process groups if they exist
-      if (groups.length > 0) {
-        groups.forEach(group => {
-          groupMap[group.id] = {
-            id: group.id,
-            title: group.title || `Group ${group.id}`,
-            color: group.color,
-            collapsed: group.collapsed,
-            windowId: group.windowId,
-            tabs: []
-          };
-        });
+    if (groups.length > 0) {
+      groups.forEach(group => {
+        groupMap[group.id] = {
+          id: group.id,
+          title: group.title || `Group ${group.id}`,
+          color: group.color,
+          collapsed: group.collapsed,
+          windowId: group.windowId,
+          index: null,
+          tabs: []
+        };
+      });
 
-        // Organize tabs into their groups
-        allTabs.forEach(tab => {
-          if (tab.groupId !== -1 && groupMap[tab.groupId]) {
-            groupMap[tab.groupId].tabs.push({
-              id: tab.id,
-              title: tab.title,
-              url: tab.url,
-              favIconUrl: tab.favIconUrl,
-              windowId: tab.windowId
-            });
-            groupedTabIds.add(tab.id);
+      // Organize tabs into their groups
+      allTabs.forEach(tab => {
+        if (tab.groupId !== -1 && groupMap[tab.groupId]) {
+          groupMap[tab.groupId].tabs.push({
+            id: tab.id,
+            title: tab.title,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl,
+            windowId: tab.windowId
+          });
+          if (typeof tab.index === 'number') {
+            const currentIndex = groupMap[tab.groupId].index;
+            groupMap[tab.groupId].index = currentIndex === null ? tab.index : Math.min(currentIndex, tab.index);
           }
-        });
-      }
+          groupedTabIds.add(tab.id);
+        }
+      });
+    }
       
       // Get ungrouped tabs (tabs without groupId OR with groupId === -1 OR not in groupMap)
       const ungroupedTabs = allTabs.filter(tab => {
@@ -101,7 +106,9 @@ export function handleGetGroupsWithTabs(request, sendResponse) {
       }));
       
       // Convert groupMap to array, filter out empty groups
-      const groupList = Object.values(groupMap).filter(g => g.tabs.length > 0);
+      const groupList = Object.values(groupMap)
+        .filter(g => g.tabs.length > 0)
+        .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
 
       console.log('Background: Returning', groupList.length, 'groups and', ungroupedTabs.length, 'ungrouped tabs');
       

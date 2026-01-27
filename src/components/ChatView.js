@@ -5,6 +5,14 @@ import { chromeApi } from '../services/chromeApi';
 import SettingsView, { COMPONENT_FILTERS } from './SettingsView';
 import Button from './common/Button';
 import '../popup/chat.css';
+import {
+  IconArrowLeft,
+  IconCopy,
+  IconFile,
+  IconRefresh,
+  IconSettings,
+  IconTrash
+} from './common/Icons';
 
 // Chat storage utilities
 const CHAT_STORAGE_PREFIX = 'chat_';
@@ -213,6 +221,10 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
 
   // Auto-save when messages or context change
   useEffect(() => {
+    if (messages.length <= 1) {
+      clearChatState(tab, group);
+      return;
+    }
     if (messages.length > 0 || context) {
       debouncedSave({ messages, context, tabMetadata });
     }
@@ -420,11 +432,12 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
     return (
       <div className={containerClass}>
         <div className={headerClass}>
-          <button 
-            className={backBtnClass} 
+          <button
+            className={backBtnClass}
             onClick={() => hasConfig ? setShowSettings(false) : onBack()}
+            aria-label="Back"
           >
-            ←
+            {isSidebar ? <IconArrowLeft className="sidebar-icon sidebar-icon--small" /> : '←'}
           </button>
           <span>{hasConfig ? 'AI Settings' : 'Setup AI Chat'}</span>
         </div>
@@ -432,6 +445,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
           <SettingsView 
             isFirstSetup={!hasConfig}
             enabledComponents={COMPONENT_FILTERS.CHAT}
+            compact={isSidebar}
             onSaved={() => {
               setShowSettings(false);
               checkConfig(); 
@@ -470,10 +484,12 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
   return (
     <div className={containerClass}>
       <div className={headerClass}>
-        <button className={backBtnClass} onClick={onBack}>←</button>
+        <button className={backBtnClass} onClick={onBack} aria-label="Back">
+          {isSidebar ? <IconArrowLeft className="sidebar-icon sidebar-icon--small" /> : '←'}
+        </button>
         {/* Display Tab Title OR Group Title */}
         <span className={tabTitleClass} title={targetTitle}>
-          {group ? '📁 ' : ''}{targetTitle}
+          {group && !isSidebar ? '📁 ' : ''}{targetTitle}
         </span>
         {messages.length > 0 && (
           <>
@@ -494,7 +510,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
               }}
               title="Clear chat history"
             >
-              🗑️
+              {isSidebar ? <IconTrash className="sidebar-icon sidebar-icon--small" /> : '🗑️'}
             </button>
             <button
               className={exportBtnClass}
@@ -507,7 +523,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
               }}
               title="Export chat transcript"
             >
-              📄
+              {isSidebar ? <IconFile className="sidebar-icon sidebar-icon--small" /> : '📄'}
             </button>
           </>
         )}
@@ -516,7 +532,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
           onClick={() => setShowSettings(true)}
           title="Configure AI Model"
         >
-          ⚙️
+          {isSidebar ? <IconSettings className="sidebar-icon sidebar-icon--small" /> : '⚙️'}
         </button>
       </div>
 
@@ -530,7 +546,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
               onClick={() => handleChipClick(chip)}
               disabled={status === 'thinking' || status === 'extracting'}
             >
-              <span className={chipEmojiClass}>{chip.emoji}</span>
+              {!isSidebar && <span className={chipEmojiClass}>{chip.emoji}</span>}
               <span className={chipLabelClass}>{chip.label}</span>
             </button>
           ))}
@@ -556,7 +572,8 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
                     const sourceNum = parseInt(num);
                     const tabInfo = tabMetadata[sourceNum - 1];
                     const linkTitle = title || (tabInfo ? tabInfo.title : `Source ${sourceNum}`);
-                    return `[🔗 ${linkTitle}](/citation-${sourceNum})`;
+                    const prefix = isSidebar ? 'Source' : '🔗';
+                    return `[${prefix} ${linkTitle}](/citation-${sourceNum})`;
                   }
                 );
                 
@@ -602,7 +619,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
                     title="Regenerate response"
                     disabled={status === 'thinking'}
                   >
-                    🔄
+                    {isSidebar ? <IconRefresh className="sidebar-icon sidebar-icon--small" /> : '🔄'}
                   </button>
                 )}
                 <button
@@ -610,7 +627,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
                   onClick={() => copyToClipboard(m.content)}
                   title="Copy message"
                 >
-                  📋
+                  {isSidebar ? <IconCopy className="sidebar-icon sidebar-icon--small" /> : '📋'}
                 </button>
               </div>
             )}

@@ -149,6 +149,26 @@ export const useGroups = () => {
     fetchGroupsAndTabs();
   }, []);
 
+  useEffect(() => {
+    const handleStorageChange = (changes, areaName) => {
+      if (areaName !== 'local') return;
+      if (changes.cachedGroups || changes.cachedUngroupedTabs) {
+        const cachedGroups = changes.cachedGroups?.newValue;
+        const cachedUngroupedTabs = changes.cachedUngroupedTabs?.newValue;
+        if (cachedGroups) {
+          setGroups(cachedGroups);
+        }
+        if (cachedUngroupedTabs) {
+          setUngroupedTabs(cachedUngroupedTabs);
+        }
+        setLoading(false);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange);
+  }, []);
+
   return {
     groups,
     ungroupedTabs,

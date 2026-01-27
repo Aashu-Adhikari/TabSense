@@ -150,9 +150,21 @@
 .chat-body-centered {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   padding: 1rem;
+  overflow: hidden;
+}
+
+.chat-body-centered .settings-container {
+  max-height: none;
+  overflow: visible;
+  width: 100%;
+  height: 100%;
+}
+
+.chat-body-centered .settings-content {
+  overflow-y: auto;
 }
 
 .api-key-container {

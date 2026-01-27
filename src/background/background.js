@@ -34,6 +34,7 @@ async function updateTabCache() {
           color: group.color,
           collapsed: group.collapsed,
           windowId: group.windowId,
+          index: null,
           tabs: []
         };
       });
@@ -47,6 +48,10 @@ async function updateTabCache() {
             favIconUrl: tab.favIconUrl,
             windowId: tab.windowId
           });
+          if (typeof tab.index === 'number') {
+            const currentIndex = groupMap[tab.groupId].index;
+            groupMap[tab.groupId].index = currentIndex === null ? tab.index : Math.min(currentIndex, tab.index);
+          }
           groupedTabIds.add(tab.id);
         }
       });
@@ -63,7 +68,9 @@ async function updateTabCache() {
       groupId: tab.groupId
     }));
 
-    const groupList = Object.values(groupMap).filter(g => g.tabs.length > 0);
+    const groupList = Object.values(groupMap)
+      .filter(g => g.tabs.length > 0)
+      .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
 
     // Save the processed data to local storage
     await chrome.storage.local.set({
@@ -341,6 +348,7 @@ async function autoGroupTab(tab) {
 
     if (result && result.success) {
       console.log('Background: Successfully auto-grouped tab:', tab.title);
+      await updateTabCache();
     } else {
       console.warn('Background: Failed to auto-group tab:', result?.error);
     }
@@ -396,6 +404,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "RENAME_GROUP") {
     return groupHandlers.handleRenameGroup(request, sendResponse);
+  }
+
+  if (request.action === "MOVE_TAB_GROUP") {
+    return groupHandlers.handleMoveGroup(request, sendResponse);
   }
 
   if (request.action === "FIND_OR_CREATE_GROUP_AND_ADD_TAB") {
@@ -468,4 +480,3 @@ chrome.runtime.onConnect.addListener((port) => {
     chatHandlers.handleChatStreamConnection(port);
   }
 });
-

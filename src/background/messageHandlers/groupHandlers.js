@@ -210,3 +210,18 @@ export function handleRenameGroup(request, sendResponse) {
   });
   return true;
 }
+
+export function handleMoveGroup(request, sendResponse) {
+  const { groupId, index, windowId } = request;
+
+  const moveOptions = windowId !== undefined ? { index, windowId } : { index };
+
+  chrome.tabGroups.move(groupId, moveOptions, () => {
+    if (chrome.runtime.lastError) {
+      sendResponse({ success: false, error: chrome.runtime.lastError.message });
+    } else {
+      sendResponse({ success: true });
+    }
+  });
+  return true;
+}

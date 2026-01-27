@@ -244,12 +244,54 @@ export function handleMlAutoGroupAllTabs(request, sendResponse) {
                           });
 
                           Promise.all(collapsePromises).then(() => {
-                            sendResponse({
-                              success: true,
-                              message: `Created ${createdGroups.length} AI-powered groups`,
-                              groupsCreated: createdGroups.length,
-                              totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
-                              groups: createdGroups
+                            chrome.tabs.query({}, (allCurrentTabs) => {
+                              const remainingUngrouped = allCurrentTabs.filter(tab =>
+                                tab.groupId === -1 || tab.groupId === undefined
+                              );
+
+                              if (remainingUngrouped.length === 0) {
+                                sendResponse({
+                                  success: true,
+                                  message: `Created ${createdGroups.length} AI-powered groups`,
+                                  groupsCreated: createdGroups.length,
+                                  totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
+                                  groups: createdGroups
+                                });
+                                return;
+                              }
+
+                              const remainingTabIds = remainingUngrouped.map(tab => tab.id);
+                              chrome.tabs.group({ tabIds: remainingTabIds }, (groupId) => {
+                                if (!chrome.runtime.lastError && groupId) {
+                                  chrome.tabGroups.update(groupId, {
+                                    title: 'Random Browsing',
+                                    color: getGroupColor('content'),
+                                    collapsed: true
+                                  }, () => {
+                                    createdGroups.push({
+                                      groupId,
+                                      name: 'Random Browsing',
+                                      tabCount: remainingTabIds.length
+                                    });
+
+                                    sendResponse({
+                                      success: true,
+                                      message: `Created ${createdGroups.length} AI-powered groups`,
+                                      groupsCreated: createdGroups.length,
+                                      totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
+                                      groups: createdGroups
+                                    });
+                                  });
+                                } else {
+                                  sendResponse({
+                                    success: true,
+                                    message: `Created ${createdGroups.length} AI-powered groups`,
+                                    groupsCreated: createdGroups.length,
+                                    totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
+                                    groups: createdGroups
+                                  });
+                                }
+                              });
                             });
                           });
                         }, 300);
