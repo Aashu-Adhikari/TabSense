@@ -37,6 +37,7 @@ export const COMPONENT_FILTERS = {
   ALL: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING],
   CHAT: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY], // LLM API and chat history settings for chat interface
   HEADER: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING], // Same as ALL for now
+  SIDEBAR: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY], // Sidebar-specific settings
 };
 
 const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COMPONENT_FILTERS.ALL }) => {
@@ -249,6 +250,7 @@ const SettingsView = ({ onSaved, onCancel, isFirstSetup, enabledComponents = COM
           </div>
         </>
       )}
+
 
       {/* If no components are enabled, show a message */}
       {!showLLMSettings && !showAutoGrouping && (

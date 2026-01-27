@@ -10,6 +10,7 @@ module.exports = (env, argv) => {
     // 1. CHECK THIS SECTION CAREFULLY
     entry: {
       popup: './src/popup/index.js',
+      sidepanel: './src/sidebar/sidepanel.js',
       background: './src/background/background.js',
       content: './src/content/content.js'
       // ❌ DELETE THIS LINE IF IT EXISTS: scraper: './src/content/scraper.js'
@@ -47,6 +48,12 @@ module.exports = (env, argv) => {
         template: './src/popup/popup.html',
         filename: 'popup.html',
         chunks: ['popup'],
+        inject: 'body'
+      }),
+      new HtmlWebpackPlugin({
+        template: './src/sidebar/sidepanel.html',
+        filename: 'sidepanel.html',
+        chunks: ['sidepanel'],
         inject: 'body'
       }),
       new CopyWebpackPlugin({

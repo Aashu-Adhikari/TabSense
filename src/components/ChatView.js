@@ -28,7 +28,6 @@ const saveChatState = async (tab, group, state) => {
 
   try {
     await chrome.storage.local.set({ [key]: dataToSave });
-    console.log('ChatView: Saved chat state for', key, 'messages:', dataToSave.messages?.length || 0);
   } catch (error) {
     console.warn('Failed to save chat state:', error);
   }
@@ -40,7 +39,6 @@ const loadChatState = async (tab, group) => {
 
   try {
     const result = await chrome.storage.local.get([key]);
-    console.log('ChatView: Loaded chat state for', key, 'found:', !!result[key], 'messages:', result[key]?.messages?.length || 0);
     return result[key] || null;
   } catch (error) {
     console.warn('Failed to load chat state:', error);
@@ -168,7 +166,7 @@ function CitationText({ children, tabMetadata, onCitationClick }) {
   return <>{processCitationText(text, tabMetadata, onCitationClick)}</>;
 }
 
-const ChatView = ({ tab, group, onBack }) => {
+const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
   // Configuration State
   const [hasConfig, setHasConfig] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -202,8 +200,11 @@ const ChatView = ({ tab, group, onBack }) => {
   }, [tab, group]);
 
   useEffect(() => {
-    checkConfig();
-    loadSavedChatState();
+    const initializeChat = async () => {
+      const hasSavedMessages = await loadSavedChatState();
+      await checkConfig(hasSavedMessages);
+    };
+    initializeChat();
   }, []);
 
   useEffect(() => {
@@ -212,41 +213,46 @@ const ChatView = ({ tab, group, onBack }) => {
 
   // Auto-save when messages or context change
   useEffect(() => {
-    console.log('ChatView: Auto-save effect triggered, messages:', messages.length, 'context length:', context.length);
     if (messages.length > 0 || context) {
-      console.log('ChatView: Triggering debounced save');
       debouncedSave({ messages, context, tabMetadata });
     }
   }, [messages, context, tabMetadata, debouncedSave]);
 
   const loadSavedChatState = async () => {
-    console.log('ChatView: Loading saved chat state for tab/group:', tab?.id, group?.id);
+    console.log('loadSavedChatState: starting for tab/group:', tab?.id, group?.id);
     const savedState = await loadChatState(tab, group);
+    console.log('loadSavedChatState: loaded state:', savedState ? 'found' : 'null');
     if (savedState && savedState.version === CHAT_STORAGE_VERSION) {
-      console.log('ChatView: Restoring saved state with', savedState.messages?.length || 0, 'messages');
+      console.log('loadSavedChatState: setting messages, count:', savedState.messages?.length || 0);
       setMessages(savedState.messages || []);
       setContext(savedState.context || '');
       setTabMetadata(savedState.tabMetadata || []);
       // If we have saved messages, we're ready; otherwise extract content
       if (savedState.messages && savedState.messages.length > 0) {
+        console.log('loadSavedChatState: setting status to ready');
         setStatus('ready');
-        console.log('ChatView: Set status to ready with saved messages');
-      } else {
-        console.log('ChatView: No saved messages, will extract content');
+        return true; // Has saved messages
       }
     } else {
-      console.log('ChatView: No valid saved state found');
+      console.log('loadSavedChatState: no valid saved state');
     }
+    return false; // No saved messages
   };
 
-  const checkConfig = async () => {
+  const checkConfig = async (hasSavedMessages = false) => {
+    console.log('checkConfig: hasSavedMessages =', hasSavedMessages, 'messages.length =', messages.length, 'status =', status);
     const response = await chromeApi.getLLMConfig();
     if (response.config && response.config.apiKey) {
       setHasConfig(true);
       setIsFreeTier(response.config.model?.includes(':free'));
       setCheckingConfig(false);
-      if (!context && status === 'initializing') {
+      // Only extract content if we don't have saved messages
+      console.log('checkConfig: checking if should extract content, hasSavedMessages =', hasSavedMessages);
+      if (!hasSavedMessages) {
+        console.log('checkConfig: extracting content');
         extractContent();
+      } else {
+        console.log('checkConfig: skipping content extraction, have saved messages');
       }
     } else {
       setHasConfig(false);
@@ -406,18 +412,23 @@ const ChatView = ({ tab, group, onBack }) => {
   }
 
   if (!hasConfig || showSettings) {
+    const containerClass = isSidebar ? 'sidebar-chat-view-container' : 'chat-view-container';
+    const headerClass = isSidebar ? 'sidebar-chat-header' : 'chat-header';
+    const backBtnClass = isSidebar ? 'sidebar-back-btn' : 'back-btn';
+    const bodyClass = isSidebar ? 'sidebar-chat-body-centered' : 'chat-body-centered';
+    
     return (
-      <div className="chat-view-container">
-        <div className="chat-header">
+      <div className={containerClass}>
+        <div className={headerClass}>
           <button 
-            className="back-btn" 
+            className={backBtnClass} 
             onClick={() => hasConfig ? setShowSettings(false) : onBack()}
           >
             ←
           </button>
           <span>{hasConfig ? 'AI Settings' : 'Setup AI Chat'}</span>
         </div>
-        <div className="chat-body-centered">
+        <div className={bodyClass}>
           <SettingsView 
             isFirstSetup={!hasConfig}
             enabledComponents={COMPONENT_FILTERS.CHAT}
@@ -435,18 +446,39 @@ const ChatView = ({ tab, group, onBack }) => {
   // Check if we should show chips (for any chat context with content)
   const showChips = (tab || group) && context.length > 0;
 
+  const containerClass = isSidebar ? 'sidebar-chat-view-container' : 'chat-view-container';
+  const headerClass = isSidebar ? 'sidebar-chat-header' : 'chat-header';
+  const backBtnClass = isSidebar ? 'sidebar-back-btn' : 'back-btn';
+  const tabTitleClass = isSidebar ? 'sidebar-chat-tab-title' : 'chat-tab-title';
+  const clearBtnClass = isSidebar ? 'sidebar-clear-chat-btn' : 'clear-chat-btn';
+  const exportBtnClass = isSidebar ? 'sidebar-export-chat-btn' : 'export-chat-btn';
+  const settingsBtnClass = isSidebar ? 'sidebar-settings-btn' : 'settings-btn';
+  const quickChipsClass = isSidebar ? 'sidebar-quick-chips' : 'quick-chips';
+  const chipBtnClass = isSidebar ? 'sidebar-chip-button' : 'chip-button';
+  const chipEmojiClass = isSidebar ? 'sidebar-chip-emoji' : 'chip-emoji';
+  const chipLabelClass = isSidebar ? 'sidebar-chip-label' : 'chip-label';
+  const messagesClass = isSidebar ? 'sidebar-chat-messages' : 'chat-messages';
+  const bubbleClass = isSidebar ? 'sidebar-chat-bubble' : 'chat-bubble';
+  const bubbleContentClass = isSidebar ? 'sidebar-chat-bubble-content' : 'chat-bubble-content';
+  const citationLinkClass = isSidebar ? 'sidebar-citation-link' : 'citation-link';
+  const messageActionsClass = isSidebar ? 'sidebar-message-actions' : 'message-actions';
+  const regenerateBtnClass = isSidebar ? 'sidebar-regenerate-btn' : 'regenerate-btn';
+  const copyBtnClass = isSidebar ? 'sidebar-copy-message-btn' : 'copy-message-btn';
+  const statusNoticeClass = isSidebar ? 'sidebar-status-bar-notice' : 'status-bar-notice';
+  const inputFormClass = isSidebar ? 'sidebar-chat-input-form' : 'chat-input-form';
+
   return (
-    <div className="chat-view-container">
-      <div className="chat-header">
-        <button className="back-btn" onClick={onBack}>←</button>
+    <div className={containerClass}>
+      <div className={headerClass}>
+        <button className={backBtnClass} onClick={onBack}>←</button>
         {/* Display Tab Title OR Group Title */}
-        <span className="chat-tab-title" title={targetTitle}>
+        <span className={tabTitleClass} title={targetTitle}>
           {group ? '📁 ' : ''}{targetTitle}
         </span>
         {messages.length > 0 && (
           <>
             <button
-              className="clear-chat-btn"
+              className={clearBtnClass}
               onClick={async () => {
                 if (confirm('Clear this chat history? This cannot be undone.')) {
                   setMessages([]);
@@ -465,7 +497,7 @@ const ChatView = ({ tab, group, onBack }) => {
               🗑️
             </button>
             <button
-              className="export-chat-btn"
+              className={exportBtnClass}
               onClick={() => {
                 const transcript = messages.map(msg => {
                   const role = msg.role === 'user' ? 'You' : 'AI';
@@ -480,7 +512,7 @@ const ChatView = ({ tab, group, onBack }) => {
           </>
         )}
         <button 
-          className="settings-btn" 
+          className={settingsBtnClass} 
           onClick={() => setShowSettings(true)}
           title="Configure AI Model"
         >
@@ -490,22 +522,22 @@ const ChatView = ({ tab, group, onBack }) => {
 
       {/* Quick Action Chips - only shown for multi-tab groups */}
       {showChips && (
-        <div className="quick-chips">
+        <div className={quickChipsClass}>
           {QUICK_CHIPS.map(chip => (
             <button 
               key={chip.id}
-              className="chip-button"
+              className={chipBtnClass}
               onClick={() => handleChipClick(chip)}
               disabled={status === 'thinking' || status === 'extracting'}
             >
-              <span className="chip-emoji">{chip.emoji}</span>
-              <span className="chip-label">{chip.label}</span>
+              <span className={chipEmojiClass}>{chip.emoji}</span>
+              <span className={chipLabelClass}>{chip.label}</span>
             </button>
           ))}
         </div>
       )}
 
-      <div className="chat-messages">
+      <div className={messagesClass}>
         {status === 'extracting' && (
           <div className="loading-state">
             <span className="btn-spinner" style={{display:'inline-block', marginRight:'8px'}}></span>
@@ -514,8 +546,8 @@ const ChatView = ({ tab, group, onBack }) => {
         )}
 
         {messages.map((m, i) => (
-          <div key={i} className={`chat-bubble ${m.role}`}>
-            <div className="chat-bubble-content">
+          <div key={i} className={`${bubbleClass} ${m.role}`}>
+            <div className={bubbleContentClass}>
               {(() => {
                 // Pre-process markdown to convert [Source N] to markdown links
                 const processedContent = m.content.replace(
@@ -540,7 +572,7 @@ const ChatView = ({ tab, group, onBack }) => {
                           const tabInfo = tabMetadata[sourceNum - 1];
                           return (
                             <button
-                              className="citation-link"
+                              className={citationLinkClass}
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -562,10 +594,10 @@ const ChatView = ({ tab, group, onBack }) => {
               })()}
             </div>
             {m.role === 'assistant' && (
-              <div className="message-actions">
+              <div className={messageActionsClass}>
                 {m.isError && lastUserMessage && (
                   <button
-                    className="regenerate-btn"
+                    className={regenerateBtnClass}
                     onClick={handleRegenerate}
                     title="Regenerate response"
                     disabled={status === 'thinking'}
@@ -574,7 +606,7 @@ const ChatView = ({ tab, group, onBack }) => {
                   </button>
                 )}
                 <button
-                  className="copy-message-btn"
+                  className={copyBtnClass}
                   onClick={() => copyToClipboard(m.content)}
                   title="Copy message"
                 >
@@ -586,7 +618,7 @@ const ChatView = ({ tab, group, onBack }) => {
         ))}
 
         {status === 'thinking' && (
-          <div className="chat-bubble assistant thinking">
+          <div className={`${bubbleClass} assistant thinking`}>
             Thinking...
           </div>
         )}
@@ -595,12 +627,12 @@ const ChatView = ({ tab, group, onBack }) => {
       </div>
 
       {isFreeTier && (
-        <div className="status-bar-notice">
+        <div className={statusNoticeClass}>
           ⚡ Using Free Model (Latency may occur)
         </div>
       )}
 
-      <form className="chat-input-form" onSubmit={handleSendMessage}>
+      <form className={inputFormClass} onSubmit={handleSendMessage}>
         <input 
           value={input} 
           onChange={e => setInput(e.target.value)} 

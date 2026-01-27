@@ -1,0 +1,376 @@
+/* ============================================= */
+/* ===== SIDEBAR BASE & LAYOUT STYLES ===== */
+/* ============================================= */
+
+:root {
+  --activity-bar-width: 48px;
+  --sidebar-bg: #f3f4f6;
+  --activity-bar-bg: #e5e7eb;
+  --activity-bar-item-color: #6b7280;
+  --activity-bar-item-hover-bg: #d1d5db;
+  --activity-bar-item-active-color: #1f2937;
+  --activity-bar-item-active-border: #3b82f6;
+  --border-color: #e5e7eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sidebar-bg: #1e1e1e;
+    /* VS Code dark sidebar bg */
+    --activity-bar-bg: #333333;
+    /* VS Code activity bar bg */
+    --activity-bar-item-color: #858585;
+    --activity-bar-item-hover-bg: #2a2d2e;
+    --activity-bar-item-active-color: #ffffff;
+    --activity-bar-item-active-border: #ffffff;
+    --border-color: #2b2b2b;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  /* Prevent body scroll */
+}
+
+.sidebar-container {
+  width: 100%;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--sidebar-bg);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: row;
+  /* Horizontal layout for Activity Bar + Content */
+  overflow: hidden;
+}
+
+/* ============================================= */
+/* ===== ACTIVITY BAR ===== */
+/* ============================================= */
+
+.activity-bar {
+  width: var(--activity-bar-width);
+  background: var(--activity-bar-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+  border-right: 1px solid var(--border-color);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.activity-bar-item {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--activity-bar-item-color);
+  position: relative;
+  transition: color 0.2s;
+}
+
+.activity-bar-item:hover {
+  color: var(--activity-bar-item-active-color);
+}
+
+.activity-bar-item.active {
+  color: var(--activity-bar-item-active-color);
+}
+
+.activity-bar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--activity-bar-item-active-border);
+}
+
+.activity-bar-icon {
+  font-size: 24px;
+  /* Use an icon font or SVG here ideally, for now emoji/text is fine */
+}
+
+.activity-bar-spacer {
+  flex: 1;
+}
+
+/* ============================================= */
+/* ===== SIDEBAR CONTENT AREA ===== */
+/* ============================================= */
+
+.sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--sidebar-bg);
+}
+
+.sidebar-header {
+  padding: 0 1.25rem;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--sidebar-bg);
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--activity-bar-item-color);
+  flex-shrink: 0;
+}
+
+.sidebar-header-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.sidebar-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 2px;
+  border-radius: 3px;
+}
+
+.sidebar-action-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--activity-bar-item-active-color);
+}
+
+/* ============================================= */
+/* ===== SCROLLABLE MAIN CONTENT ===== */
+/* ============================================= */
+
+.sidebar-main {
+  padding: 0;
+  /* Remove padding to let lists touch edges */
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-section {
+  margin-bottom: 0;
+}
+
+.sidebar-section-header {
+  padding: 4px 16px;
+  font-weight: bold;
+  font-size: 11px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--activity-bar-item-color);
+}
+
+.sidebar-section-header:hover {
+  color: var(--activity-bar-item-active-color);
+}
+
+.sidebar-section-header .codicon {
+  margin-right: 4px;
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.sidebar-section-header.collapsed .codicon {
+  transform: rotate(-90deg);
+}
+
+.sidebar-section-content {
+  padding: 0 0 8px 0;
+}
+
+/* ============================================= */
+/* ===== LIST ITEMS (Groups, Tabs) ===== */
+/* ============================================= */
+
+.sidebar-group-item,
+.sidebar-tab-item {
+  display: flex;
+  align-items: center;
+  padding: 3px 12px;
+  /* Reduced padding */
+  cursor: pointer;
+  border: none;
+  /* Remove borders for cleaner look */
+  border-radius: 0;
+  margin: 0;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 12px;
+  /* Reduced font size */
+  height: 20px;
+  /* Reduced height */
+}
+
+.sidebar-group-item:hover,
+.sidebar-tab-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+  /* Subtle hover */
+}
+
+@media (prefers-color-scheme: dark) {
+
+  .sidebar-group-item:hover,
+  .sidebar-tab-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.sidebar-group-info,
+.sidebar-tab-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sidebar-group-title,
+.sidebar-tab-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-group-count {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-left: auto;
+}
+
+.sidebar-tab-favicon {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+}
+
+/* ============================================= */
+/* ===== SEARCH & INPUTS ===== */
+/* ============================================= */
+
+.sidebar-search-container {
+  padding: 8px 14px;
+  margin-bottom: 0;
+}
+
+.sidebar-search-input-wrapper {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  padding: 2px 4px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sidebar-search-input-wrapper {
+    background: #3c3c3c;
+    border-color: #3c3c3c;
+  }
+}
+
+.sidebar-search-input-wrapper:focus-within {
+  border-color: #007fd4;
+  /* VS Code focus blue */
+  box-shadow: none;
+}
+
+.sidebar-search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 12px;
+  color: inherit;
+  outline: none;
+  padding: 0;
+}
+
+/* ============================================= */
+/* ===== BUTTONS ===== */
+/* ============================================= */
+
+.sidebar-btn {
+  border-radius: 2px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+}
+
+.sidebar-btn--primary {
+  background-color: #0e639c;
+  color: white;
+}
+
+.sidebar-btn--primary:hover {
+  background-color: #1177bb;
+}
+
+.sidebar-btn--secondary {
+  background-color: #3c3c3c;
+  color: white;
+}
+
+/* ============================================= */
+/* ===== SCROLLBARS ===== */
+/* ============================================= */
+
+.sidebar-main::-webkit-scrollbar {
+  width: 10px;
+}
+
+.sidebar-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-main::-webkit-scrollbar-thumb {
+  background: rgba(121, 121, 121, 0.4);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.sidebar-main::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 100, 100, 0.7);
+}
+
+/* ============================================= */
+/* ===== SETTINGS VIEW ===== */
+/* ============================================= */
+/* ============================================= */
+/* ===== SETTINGS VIEW ===== */
+/* ============================================= */
+.settings-view-container {
+  padding: 0;
+  width: 100%;
+}
+
+/* Override popup settings styles for sidebar */
+.settings-view-container .settings-container {
+  width: 100%;
+  height: auto;
+  background: transparent;
+  padding: 1rem;
+  box-shadow: none;
+}

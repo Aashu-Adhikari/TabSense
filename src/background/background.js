@@ -101,23 +101,29 @@ async function setTimersForInactiveUngroupedTabs() {
       shouldAutoGroupTab(tab)
     );
 
+    console.log('Background: Found', ungroupedTabs.length, 'ungrouped tabs that could be auto-grouped');
+
     // Clear existing timers for tabs that are no longer ungrouped or active
     for (const [tabId, timer] of activeTabTimers) {
       const tab = allTabs.find(t => t.id === tabId);
       if (!tab || tab.groupId !== -1 || tab.id === currentActiveTabId) {
         clearTimeout(timer);
         activeTabTimers.delete(tabId);
+        console.log('Background: Cleared timer for tab:', tabId);
       }
     }
 
-    // Set timers for inactive ungrouped tabs
-    ungroupedTabs.forEach(tab => {
+    // Set timers for inactive ungrouped tabs with staggered delays
+    const STAGGER_DELAY = 1000; // 1 second delay between each tab's grouping
+    ungroupedTabs.forEach((tab, index) => {
       if (!activeTabTimers.has(tab.id)) {
-        console.log('Background: Setting timer for inactive ungrouped tab:', tab.title);
+        const delay = ACTIVITY_TIMEOUT + (index * STAGGER_DELAY);
+        console.log(`Background: Setting timer for inactive ungrouped tab ${index + 1}/${ungroupedTabs.length}:`, tab.title, 'with delay:', delay, 'ms at', new Date().toISOString());
         const timer = setTimeout(async () => {
+          console.log('Background: Timer triggered for tab:', tab.title, 'at', new Date().toISOString());
           await autoGroupTab(tab);
           activeTabTimers.delete(tab.id);
-        }, ACTIVITY_TIMEOUT);
+        }, delay);
         activeTabTimers.set(tab.id, timer);
       }
     });

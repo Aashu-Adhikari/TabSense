@@ -14,8 +14,12 @@
     "tabs",
     "tabGroups",
     "storage",
-    "scripting"
+    "scripting",
+    "sidePanel"
   ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
   "host_permissions": [
     "<all_urls>"
   ],
