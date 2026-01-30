@@ -312,14 +312,15 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
     }
   };
 
+  const inputFormRef = useRef(null);
+
   // Handle chip click - set input and auto-submit
   const handleChipClick = (chip) => {
     setInput(chip.prompt);
     setStatus('ready');
     // Auto-submit after setting input
     setTimeout(() => {
-      const form = document.querySelector('.chat-input-form');
-      if (form) form.requestSubmit();
+      inputFormRef.current?.requestSubmit();
     }, 100);
   };
 
@@ -462,7 +463,8 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
             compact={isSidebar}
             onSaved={() => {
               setShowSettings(false);
-              checkConfig(); 
+              const hasExistingConversation = messages.length > 0 || context.length > 0;
+              checkConfig(hasExistingConversation);
             }}
             onCancel={hasConfig ? () => setShowSettings(false) : null}
           />
@@ -701,7 +703,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
         </div>
       )}
 
-      <form className={inputFormClass} onSubmit={handleSendMessage}>
+      <form ref={inputFormRef} className={inputFormClass} onSubmit={handleSendMessage}>
         <input 
           value={input} 
           onChange={e => setInput(e.target.value)} 

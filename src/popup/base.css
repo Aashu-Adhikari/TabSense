@@ -28,6 +28,11 @@
   padding-right: 2rem;
 }
 
+.popup-container .group-count {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.4rem;
+}
+
 .subtitle {
   margin: 0.25rem 0 0;
   color: #64748b;
@@ -117,6 +122,8 @@
   .popup-container .group-count {
     background: #1b1f24;
     color: #cbd5e1;
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
   }
 
   .popup-container .group-content {

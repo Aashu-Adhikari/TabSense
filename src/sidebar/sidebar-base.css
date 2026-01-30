@@ -405,6 +405,11 @@ body {
 
 .sidebar-container .group-count {
   font-size: 0.6rem;
+  padding: 0.1rem 0.4rem;
+  min-width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-container .group-content {
@@ -519,6 +524,22 @@ body {
   color: inherit;
   outline: none;
   padding: 0;
+}
+
+/* ============================================= */
+/* ===== SELECTS ===== */
+/* ============================================= */
+
+.sidebar-select {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+  color: #111827;
+  padding: 2px 6px;
+  height: 20px;
+  line-height: 1;
+  font-size: 10px;
+  color-scheme: light;
 }
 
 /* ============================================= */
@@ -668,6 +689,13 @@ body {
     background: #14161a;
     color: #e5e7eb;
     border-color: #2a3138;
+  }
+
+  .sidebar-select {
+    background: #14161a;
+    color: #e5e7eb;
+    border-color: #2a3138;
+    color-scheme: dark;
   }
 
   .sidebar-container .sidebar-btn--primary,
