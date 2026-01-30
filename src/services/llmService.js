@@ -26,16 +26,20 @@ class LLMService {
       throw new Error('API Key is missing. Please configure it in settings.');
     }
 
+    const sourceMatches = context ? context.match(/\[Source\s+\d+\]/g) : null;
+    const sourceCount = sourceMatches ? sourceMatches.length : 0;
+    const includeCitations = sourceCount > 1;
+
     const systemPrompt = {
       role: 'system',
       content: `You are a helpful AI assistant analyzing webpage content. 
       Answer the user's questions based primarily on the provided webpage context.
       
       CITATION RULES:
-      - When referencing specific information, cite the source using the format: [Source N]
-      - Where N is the source number (1, 2, 3...) corresponding to the numbered sources below
-      - Only cite when referencing specific facts from the context
-      - If information comes from a specific source, cite it immediately after the claim
+      ${includeCitations ? '- When referencing specific information, cite the source using the format: [Source N]' : '- Do not include citations'}
+      ${includeCitations ? '- Where N is the source number (1, 2, 3...) corresponding to the numbered sources below' : ''}
+      ${includeCitations ? '- Only cite when referencing specific facts from the context' : ''}
+      ${includeCitations ? '- If information comes from a specific source, cite it immediately after the claim' : ''}
       
       SOURCES:
       ${context}`

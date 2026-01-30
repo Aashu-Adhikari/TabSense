@@ -69,16 +69,16 @@
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .action-grid {
-    background: #0f172a;
-    border-color: #334155;
+    background: #14161a;
+    border-color: #252a2f;
   }
   .grouping-box {
-    background: #1e293b;
-    border-color: #334155;
+    background: #1b1f24;
+    border-color: #2a3138;
   }
   .grouping-method-select {
-    background: #0f172a;
-    border-color: #334155;
-    color: #f1f5f9;
+    background: #14161a;
+    border-color: #2a3138;
+    color: #e5e7eb;
   }
 }

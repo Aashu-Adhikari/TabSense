@@ -174,7 +174,7 @@ function CitationText({ children, tabMetadata, onCitationClick }) {
   return <>{processCitationText(text, tabMetadata, onCitationClick)}</>;
 }
 
-const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
+const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
   // Configuration State
   const [hasConfig, setHasConfig] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -221,11 +221,10 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
 
   // Auto-save when messages or context change
   useEffect(() => {
-    if (messages.length <= 1) {
-      clearChatState(tab, group);
-      return;
-    }
     if (messages.length > 0 || context) {
+      if (messages.length <= 1) {
+        return;
+      }
       debouncedSave({ messages, context, tabMetadata });
     }
   }, [messages, context, tabMetadata, debouncedSave]);
@@ -417,6 +416,21 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
     });
   };
 
+  const handleResendLastUserMessage = () => {
+    if (status === 'thinking') return;
+    if (lastUserMessageIndex < 0) return;
+    const lastUser = messages[lastUserMessageIndex];
+    if (!lastUser?.content) return;
+    setMessages(prev => prev.slice(0, lastUserMessageIndex));
+    setInput(lastUser.content);
+    setStatus('ready');
+    setTimeout(() => {
+      const formSelector = isSidebar ? '.sidebar-chat-input-form' : '.chat-input-form';
+      const form = document.querySelector(formSelector);
+      if (form) form.requestSubmit();
+    }, 100);
+  };
+
   // --- RENDER HELPERS ---
 
   if (checkingConfig) {
@@ -459,6 +473,12 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
 
   // Check if we should show chips (for any chat context with content)
   const showChips = (tab || group) && context.length > 0;
+  const lastUserMessageIndex = (() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i]?.role === 'user') return i;
+    }
+    return -1;
+  })();
 
   const containerClass = isSidebar ? 'sidebar-chat-view-container' : 'chat-view-container';
   const headerClass = isSidebar ? 'sidebar-chat-header' : 'chat-header';
@@ -467,6 +487,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
   const clearBtnClass = isSidebar ? 'sidebar-clear-chat-btn' : 'clear-chat-btn';
   const exportBtnClass = isSidebar ? 'sidebar-export-chat-btn' : 'export-chat-btn';
   const settingsBtnClass = isSidebar ? 'sidebar-settings-btn' : 'settings-btn';
+  const refreshBtnClass = isSidebar ? 'sidebar-refresh-chat-btn' : 'refresh-chat-btn';
   const quickChipsClass = isSidebar ? 'sidebar-quick-chips' : 'quick-chips';
   const chipBtnClass = isSidebar ? 'sidebar-chip-button' : 'chip-button';
   const chipEmojiClass = isSidebar ? 'sidebar-chip-emoji' : 'chip-emoji';
@@ -491,6 +512,16 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
         <span className={tabTitleClass} title={targetTitle}>
           {group && !isSidebar ? '📁 ' : ''}{targetTitle}
         </span>
+        {isSidebar && onRefresh && (
+          <button
+            className={refreshBtnClass}
+            onClick={onRefresh}
+            title="Refresh current tab chat"
+            aria-label="Refresh current tab chat"
+          >
+            <IconRefresh className="sidebar-icon sidebar-icon--small" />
+          </button>
+        )}
         {messages.length > 0 && (
           <>
             <button
@@ -566,16 +597,24 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
             <div className={bubbleContentClass}>
               {(() => {
                 // Pre-process markdown to convert [Source N] to markdown links
-                const processedContent = m.content.replace(
-                  /\[Source\s+(\d+)(?:[:\s]+([^\]]+))?\]/gi,
-                  (match, num, title) => {
-                    const sourceNum = parseInt(num);
-                    const tabInfo = tabMetadata[sourceNum - 1];
-                    const linkTitle = title || (tabInfo ? tabInfo.title : `Source ${sourceNum}`);
-                    const prefix = isSidebar ? 'Source' : '🔗';
-                    return `[${prefix} ${linkTitle}](/citation-${sourceNum})`;
-                  }
-                );
+                const processedContent = m.content
+                  .replace(
+                    /\[Sources?\s+([^\]]+)\]/gi,
+                    (match, list) => {
+                      const parts = list.split(',').map(part => part.trim()).filter(Boolean);
+                      return parts.map(part => `[Source ${part}]`).join(' ');
+                    }
+                  )
+                  .replace(
+                    /\[Source\s+(\d+)(?:[:\s]+([^\]]+))?\]/gi,
+                    (match, num, title) => {
+                      const sourceNum = parseInt(num);
+                      const tabInfo = tabMetadata[sourceNum - 1];
+                      const linkTitle = title || (tabInfo ? tabInfo.title : `Source ${sourceNum}`);
+                      const prefix = isSidebar ? 'Source' : '🔗';
+                      return `[${prefix} ${linkTitle}](/citation-${sourceNum})`;
+                    }
+                  );
                 
                 return (
                   <ReactMarkdown 
@@ -595,9 +634,10 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
                                 e.stopPropagation();
                                 handleCitationClick(sourceNum);
                               }}
-                              title={`Jump to: ${tabInfo?.title || `Source ${sourceNum}`}`}
+                              title={tabInfo?.title || `Source ${sourceNum}`}
+                              aria-label={tabInfo?.title || `Source ${sourceNum}`}
                             >
-                              {children}
+                              <span className="citation-index">{sourceNum}</span>
                             </button>
                           );
                         }
@@ -628,6 +668,18 @@ const ChatView = ({ tab, group, onBack, isSidebar = false }) => {
                   title="Copy message"
                 >
                   {isSidebar ? <IconCopy className="sidebar-icon sidebar-icon--small" /> : '📋'}
+                </button>
+              </div>
+            )}
+            {m.role === 'user' && i === lastUserMessageIndex && (
+              <div className={messageActionsClass}>
+                <button
+                  className={regenerateBtnClass}
+                  onClick={handleResendLastUserMessage}
+                  title="Resend message"
+                  disabled={status === 'thinking'}
+                >
+                  {isSidebar ? <IconRefresh className="sidebar-icon sidebar-icon--small" /> : 'Resend'}
                 </button>
               </div>
             )}

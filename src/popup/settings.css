@@ -44,6 +44,46 @@
   overflow-y: auto;
 }
 
+@media (prefers-color-scheme: dark) {
+  .settings-container {
+    background: #0f1012;
+    color: #e5e7eb;
+  }
+
+  .settings-title {
+    color: #e5e7eb;
+  }
+
+  .settings-btn-header {
+    color: #e5e7eb;
+  }
+
+  .settings-input,
+  .settings-select {
+    background: #14161a;
+    color: #e5e7eb;
+    border-color: #2a3138;
+  }
+
+  .form-group label {
+    color: #cbd5e1;
+  }
+
+  .settings-hint {
+    color: #9aa4b2;
+  }
+
+  .free-tier-notice {
+    background: #2a2316;
+    border-color: #6b4e1f;
+    color: #f3f4f6;
+  }
+
+  .settings-container h3 {
+    color: #e5e7eb;
+  }
+}
+
 .form-group {
   margin-bottom: 1rem;
 }

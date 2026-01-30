@@ -357,3 +357,103 @@
   margin: 0.75rem;
   border: 1px dashed #e2e8f0;
 }
+
+@media (prefers-color-scheme: dark) {
+  .search-input-wrapper {
+    background: #14161a;
+    border-color: #2a3138;
+    box-shadow: none;
+  }
+
+  .search-input {
+    color: #e5e7eb;
+  }
+
+  .search-input::placeholder {
+    color: #94a3b8;
+  }
+
+  .search-results-container {
+    background: #0f1012;
+    border-color: #252a2f;
+    box-shadow: none;
+  }
+
+  .search-header {
+    background: #14161a;
+    border-color: #252a2f;
+  }
+
+  .search-header h3 {
+    color: #e5e7eb;
+  }
+
+  .search-count {
+    background: #1b1f24;
+    color: #cbd5e1;
+  }
+
+  .search-section {
+    border-bottom-color: #1b1f24;
+  }
+
+  .search-section-header {
+    border-bottom-color: #1b1f24;
+  }
+
+  .search-section-header h4 {
+    color: #cbd5e1;
+  }
+
+  .search-section-count {
+    background: #1b1f24;
+    color: #cbd5e1;
+  }
+
+  .search-tab-item {
+    background: #14161a;
+    border-color: #252a2f;
+  }
+
+  .search-tab-item:hover {
+    background: #101317;
+    border-color: #3a424b;
+    box-shadow: none;
+  }
+
+  .search-tab-title {
+    color: #e5e7eb;
+  }
+
+  .search-tab-url {
+    color: #9aa4b2;
+  }
+
+  .search-tab-group {
+    background: #1b1f24;
+    color: #cbd5e1;
+  }
+
+  .search-group-select {
+    background: #14161a;
+    color: #e5e7eb;
+    border-color: #2a3138;
+  }
+
+  .search-header .clear-search-btn {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #cbd5e1;
+  }
+
+  .search-header .clear-search-btn:hover {
+    background: #1b1f24;
+    border-color: #3a424b;
+  }
+
+  .no-results {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #9aa4b2;
+  }
+}

@@ -18,7 +18,8 @@ import {
   IconChevrons,
   IconFolder,
   IconRefresh,
-  IconSettings
+  IconSettings,
+  IconSort
 } from '../components/common/Icons';
 
 function SidebarApp() {
@@ -75,6 +76,15 @@ function SidebarApp() {
         setCurrentTab(tabs[0]);
       }
     });
+    const handleActivated = (activeInfo) => {
+      chrome.tabs.get(activeInfo.tabId, (tab) => {
+        if (!chrome.runtime.lastError && tab) {
+          setCurrentTab(tab);
+        }
+      });
+    };
+    chrome.tabs.onActivated.addListener(handleActivated);
+    return () => chrome.tabs.onActivated.removeListener(handleActivated);
   }, []);
 
   // Switch to chat view if a chat is activated
@@ -227,6 +237,39 @@ function SidebarApp() {
     }
   };
 
+  const handleSortGroups = async () => {
+    const { chromeApi } = await import('../services/chromeApi');
+    const normalizeTitle = (title) =>
+      title.replace(/^[^A-Za-z0-9]+/, '').trim();
+    const groupsByWindow = groups.reduce((acc, group) => {
+      acc[group.windowId] = acc[group.windowId] || [];
+      acc[group.windowId].push(group);
+      return acc;
+    }, {});
+
+    for (const windowId of Object.keys(groupsByWindow)) {
+      const windowGroups = groupsByWindow[windowId];
+      const indices = windowGroups.map(group => group.index).filter(index => typeof index === 'number');
+      if (indices.length === 0) {
+        continue;
+      }
+      let cursorIndex = Math.min(...indices);
+      const sorted = [...windowGroups].sort((a, b) =>
+        normalizeTitle(a.title).localeCompare(
+          normalizeTitle(b.title),
+          undefined,
+          { numeric: true, sensitivity: 'base' }
+        )
+      );
+      for (let i = 0; i < sorted.length; i += 1) {
+        const tabCount = sorted[i].tabs?.length || 1;
+        await chromeApi.moveTabGroup(sorted[i].id, cursorIndex, parseInt(windowId, 10));
+        cursorIndex += tabCount;
+      }
+    }
+    fetchGroupsAndTabs();
+  };
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && searchTerm) clearSearch();
@@ -302,6 +345,9 @@ function SidebarApp() {
               else setExpandedGroups(new Set(groups.map(g => g.id)));
             }} title="Toggle All">
               <IconChevrons className="sidebar-icon sidebar-icon--small" />
+            </button>
+            <button className="sidebar-action-btn" onClick={handleSortGroups} title="Sort Groups">
+              <IconSort className="sidebar-icon sidebar-icon--small" />
             </button>
           </div>
         </div>
@@ -512,18 +558,27 @@ function SidebarApp() {
     // For now, we'll just show the ChatView with the active tab/group or null
     // If null, ChatView usually handles it or we can show a "Select a tab to chat" message
     const target = activeChatTab ? { tab: activeChatTab } : (activeChatGroup ? { group: activeChatGroup } : { tab: currentTab });
+    const chatKey = target.tab ? `tab-${target.tab.id}` : (target.group ? `group-${target.group.id}` : 'none');
 
     return (
       <div className="sidebar-main" style={{ overflow: 'hidden' }}>
         {target.tab || target.group ? (
           <ChatView
             {...target}
+            key={chatKey}
             onBack={() => {
               setActiveChatTab(null);
               setActiveChatGroup(null);
               setActiveView('explorer');
             }}
             isSidebar
+            onRefresh={() => {
+              if (currentTab) {
+                setActiveChatGroup(null);
+                setActiveChatTab(currentTab);
+                setActiveView('chat');
+              }
+            }}
           />
         ) : (
           <div className="sidebar-empty-section">Select a tab or group to start chatting.</div>

@@ -138,7 +138,7 @@ const SettingsView = ({
     onSaved();
   };
 
-  const headerTitle = title || (compact ? 'AI Settings' : '⚙️ Settings');
+  const headerTitle = title || '⚙️ Settings';
 
   return (
     <div className="settings-container">

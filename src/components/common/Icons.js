@@ -87,3 +87,14 @@ export const IconCopy = ({ className }) => (
     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
   </Icon>
 );
+
+export const IconSort = ({ className }) => (
+  <Icon className={className}>
+    <path d="M11 5h10" />
+    <path d="M7 9H21" />
+    <path d="M15 13h6" />
+    <path d="M3 5v14" />
+    <path d="M3 19l-2-2" />
+    <path d="M3 19l2-2" />
+  </Icon>
+);

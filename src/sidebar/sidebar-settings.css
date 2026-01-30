@@ -23,6 +23,38 @@
   padding: 0.75rem;
 }
 
+@media (prefers-color-scheme: dark) {
+  .sidebar-container .settings-container {
+    background: #0f1012;
+    color: #e5e7eb;
+  }
+
+  .sidebar-container .settings-title {
+    color: #e5e7eb;
+  }
+
+  .sidebar-container .settings-input,
+  .sidebar-container .settings-select {
+    background: #14161a;
+    color: #e5e7eb;
+    border-color: #2a3138;
+  }
+
+  .sidebar-container .form-group label {
+    color: #cbd5e1;
+  }
+
+  .sidebar-container .settings-hint,
+  .sidebar-container .free-tier-notice {
+    color: #9aa4b2;
+  }
+
+  .sidebar-container .free-tier-notice {
+    background: #2a2316;
+    border-color: #6b4e1f;
+  }
+}
+
 .sidebar-container .settings-input,
 .sidebar-container .settings-select {
   font-size: 0.7rem;

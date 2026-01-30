@@ -14,7 +14,7 @@ import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView'; // <-- NEW IMPORT
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView'; // <-- NEW IMPORT
 import { mlCategories } from '../utils/mlCategories';
-import { IconChat } from '../components/common/Icons';
+import { IconChat, IconChevrons, IconSort } from '../components/common/Icons';
 
 function App() {
   const {
@@ -217,6 +217,39 @@ function App() {
     }
   };
 
+  const handleSortGroups = async () => {
+    const { chromeApi } = await import('../services/chromeApi');
+    const normalizeTitle = (title) =>
+      title.replace(/^[^A-Za-z0-9]+/, '').trim();
+    const groupsByWindow = groups.reduce((acc, group) => {
+      acc[group.windowId] = acc[group.windowId] || [];
+      acc[group.windowId].push(group);
+      return acc;
+    }, {});
+
+    for (const windowId of Object.keys(groupsByWindow)) {
+      const windowGroups = groupsByWindow[windowId];
+      const indices = windowGroups.map(group => group.index).filter(index => typeof index === 'number');
+      if (indices.length === 0) {
+        continue;
+      }
+      let cursorIndex = Math.min(...indices);
+      const sorted = [...windowGroups].sort((a, b) =>
+        normalizeTitle(a.title).localeCompare(
+          normalizeTitle(b.title),
+          undefined,
+          { numeric: true, sensitivity: 'base' }
+        )
+      );
+      for (let i = 0; i < sorted.length; i += 1) {
+        const tabCount = sorted[i].tabs?.length || 1;
+        await chromeApi.moveTabGroup(sorted[i].id, cursorIndex, parseInt(windowId, 10));
+        cursorIndex += tabCount;
+      }
+    }
+    fetchGroupsAndTabs();
+  };
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && searchTerm) clearSearch();
@@ -370,21 +403,39 @@ function App() {
               <h2>Tab Groups ({groups.length})</h2>
               {groups.length > 0 && (
                 <div className="section-header-actions">
-                  <Button variant="secondary" onClick={() => {
-                    if (expandedGroups.size === groups.length) setExpandedGroups(new Set());
-                    else setExpandedGroups(new Set(groups.map(g => g.id)));
-                  }}>
-                    {expandedGroups.size === groups.length ? 'Collapse All' : 'Expand All'}
-                  </Button>
-                  <Button variant="secondary" onClick={() => {
-                    if (confirm('Are you sure you want to ungroup all tabs?')) {
-                      Promise.all(groups.map(group => handleUngroupAll(group.id, true)))
-                        .then(() => fetchGroupsAndTabs())
-                        .catch(error => console.error('Error ungrouping all tabs:', error));
-                    }
-                  }}>
-                    Ungroup All
-                  </Button>
+                  <button
+                    className="section-icon-btn"
+                    onClick={() => {
+                      if (expandedGroups.size === groups.length) setExpandedGroups(new Set());
+                      else setExpandedGroups(new Set(groups.map(g => g.id)));
+                    }}
+                    title={expandedGroups.size === groups.length ? 'Collapse All' : 'Expand All'}
+                    aria-label={expandedGroups.size === groups.length ? 'Collapse All' : 'Expand All'}
+                  >
+                    <IconChevrons />
+                  </button>
+                  <button
+                    className="section-icon-btn"
+                    onClick={handleSortGroups}
+                    title="Sort Groups"
+                    aria-label="Sort Groups"
+                  >
+                    <IconSort />
+                  </button>
+                  <button
+                    className="section-icon-btn"
+                    onClick={() => {
+                      if (confirm('Are you sure you want to ungroup all tabs?')) {
+                        Promise.all(groups.map(group => handleUngroupAll(group.id, true)))
+                          .then(() => fetchGroupsAndTabs())
+                          .catch(error => console.error('Error ungrouping all tabs:', error));
+                      }
+                    }}
+                    title="Ungroup All"
+                    aria-label="Ungroup All"
+                  >
+                    X
+                  </button>
                 </div>
               )}
             </div>

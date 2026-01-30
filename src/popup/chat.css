@@ -311,17 +311,18 @@
 .citation-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   background: #dbeafe;
   color: #1d4ed8;
   border: 1px solid #93c5fd;
-  padding: 2px 8px;
-  border-radius: 12px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 0.85em;
+  font-size: 0;
   font-weight: 500;
   transition: all 0.2s;
   text-decoration: none;
+  justify-content: center;
 }
 
 .citation-link:hover {
@@ -330,15 +331,10 @@
   color: #1e40af;
 }
 
-.citation-icon {
-  font-size: 10px;
-}
-
-.citation-label {
-  max-width: 150px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.citation-index {
+  font-size: 0.7rem;
+  line-height: 1;
+  font-weight: 600;
 }
 
 .citation-hidden {
@@ -436,34 +432,81 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .chat-view-container {
+    background: #0f1012;
+  }
+
+  .chat-header {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #e5e7eb;
+  }
+
+  .chat-tab-title {
+    color: #e5e7eb;
+  }
+
+  .chat-messages {
+    background: #0f1012;
+  }
+
+  .chat-bubble.user {
+    background: #1b1f24;
+    color: #e5e7eb;
+    border-color: #2a3138;
+  }
+
+  .chat-bubble.assistant {
+    background: #14161a;
+    color: #e5e7eb;
+    border-color: #252a2f;
+  }
+
+  .chat-input-form {
+    background: #14161a;
+    border-color: #252a2f;
+  }
+
+  .chat-input-form input {
+    background: #0f1012;
+    color: #e5e7eb;
+    border-color: #2a3138;
+  }
+
+  .chat-input-form button {
+    background: #2b3138;
+    color: #e5e7eb;
+  }
+
   .quick-chips {
-    background: #1e293b;
-    border-color: #334155;
+    background: #14161a;
+    border-color: #252a2f;
   }
   
   .chip-button {
-    background: #334155;
-    border-color: #475569;
-    color: #f1f5f9;
+    background: #1b1f24;
+    border-color: #2a3138;
+    color: #e5e7eb;
   }
   
   .chip-button:hover:not(:disabled) {
-    background: #3b82f6;
-    border-color: #3b82f6;
-    color: white;
+    background: #2a3138;
+    border-color: #3a424b;
+    color: #f8fafc;
   }
   
   .citation-link {
-    background: #1e3a8a;
-    color: #7dd3fc;
+    background: #1b1f24;
+    color: #cbd5e1;
+    border-color: #2a3138;
   }
   
   .citation-link:hover {
-    background: #2563eb;
-    color: #e0f2fe;
+    background: #2a3138;
+    color: #e5e7eb;
   }
   
   .citation-hidden {
-    color: #64748b;
+    color: #9aa4b2;
   }
 }

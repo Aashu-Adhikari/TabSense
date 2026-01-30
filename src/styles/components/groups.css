@@ -21,6 +21,132 @@
   display: flex;
   gap: 0.5rem;
 }
+
+.section-icon-btn {
+  width: 35px;
+  height: 35px;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+}
+
+.section-icon-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.section-icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .section-header {
+    border-color: #252a2f;
+  }
+
+  .section-header h2 {
+    color: #e5e7eb;
+  }
+
+  .count-badge {
+    background: #1b1f24;
+    color: #cbd5e1;
+  }
+
+  .group-card {
+    background: #14161a;
+    border-color: #252a2f;
+    box-shadow: none;
+  }
+
+  .group-header {
+    background: #101317;
+  }
+
+  .group-header:hover {
+    background: #14161a;
+  }
+
+  .group-title {
+    color: #e5e7eb;
+  }
+
+  .group-count {
+    background: #1b1f24;
+    color: #cbd5e1;
+  }
+
+  .group-content {
+    border-top-color: #252a2f;
+    background: #101317;
+  }
+
+  .group-tab-item {
+    border-bottom-color: #1b1f24;
+  }
+
+  .group-tab-item:hover {
+    background: #14161a;
+  }
+
+  .group-tab-title {
+    color: #e5e7eb;
+  }
+
+  .group-tab-url {
+    color: #9aa4b2;
+  }
+
+  .group-action-btn {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #cbd5e1;
+  }
+
+  .group-action-btn:hover {
+    background: #1b1f24;
+    border-color: #3a424b;
+    color: #e5e7eb;
+  }
+
+  .ungrouped-tab-item {
+    background: #14161a;
+    border-color: #252a2f;
+  }
+
+  .ungrouped-tab-item:hover {
+    background: #101317;
+    border-color: #3a424b;
+  }
+
+  .ungrouped-tab-title {
+    color: #e5e7eb;
+  }
+
+  .group-select {
+    background: #14161a;
+    color: #e5e7eb;
+    border-color: #2a3138;
+  }
+
+  .section-icon-btn {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #cbd5e1;
+  }
+
+  .section-icon-btn:hover {
+    background: #1b1f24;
+    color: #e5e7eb;
+  }
+}
 .count-badge {
   background: #e2e8f0;
   color: #475569;
