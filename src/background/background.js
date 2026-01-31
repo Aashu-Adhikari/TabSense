@@ -190,6 +190,16 @@ chrome.tabGroups.onRemoved.addListener(updateTabCache);
 chrome.tabGroups.onUpdated.addListener(updateTabCache);
 chrome.tabGroups.onMoved.addListener(updateTabCache);
 
+async function applyPanelBehaviorFromSettings() {
+  try {
+    const { ui_preferences: uiPreferences } = await chrome.storage.local.get(['ui_preferences']);
+    const defaultView = uiPreferences?.defaultView || 'sidepanel';
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: defaultView === 'sidepanel' });
+  } catch (error) {
+    console.warn('Background: Failed to apply side panel behavior:', error);
+  }
+}
+
 // Chat history management
 const CHAT_STORAGE_PREFIX = 'chat_';
 
@@ -240,14 +250,22 @@ async function purgeOldChatHistories() {
 
 // Create an initial cache when the browser starts or the extension is installed/updated
 chrome.runtime.onStartup.addListener(async () => {
+  await applyPanelBehaviorFromSettings();
   await updateTabCache();
   await setTimersForInactiveUngroupedTabs();
   await purgeOldChatHistories();
 });
 chrome.runtime.onInstalled.addListener(async () => {
+  await applyPanelBehaviorFromSettings();
   await updateTabCache();
   await setTimersForInactiveUngroupedTabs();
   await purgeOldChatHistories();
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes.ui_preferences) {
+    applyPanelBehaviorFromSettings();
+  }
 });
 
 // =================================================================

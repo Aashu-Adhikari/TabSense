@@ -19,6 +19,67 @@
   background: white;
   flex-shrink: 0;
 }
+
+.popup-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.popup-brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.popup-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.popup-brand-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.popup-brand-tagline {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.header-actions {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.header-icon-btn {
+  background: none;
+  border: none;
+  padding: 0.15rem;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.header-icon-btn:hover {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.popup-icon {
+  width: 16px;
+  height: 16px;
+}
 .popup-header h1 {
   margin: 0;
   font-size: 1.5rem;
@@ -52,6 +113,7 @@
   flex-shrink: 0;
   display: flex;
   justify-content: center;
+  gap: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -76,6 +138,23 @@
 
   .subtitle {
     color: #9aa4b2;
+  }
+
+  .popup-brand-title {
+    color: #e5e7eb;
+  }
+
+  .popup-brand-tagline {
+    color: #9aa4b2;
+  }
+
+  .header-icon-btn {
+    color: #9aa4b2;
+  }
+
+  .header-icon-btn:hover {
+    color: #e5e7eb;
+    background: rgba(148, 163, 184, 0.16);
   }
 
   .btn--secondary {

@@ -98,3 +98,9 @@ export const IconSort = ({ className }) => (
     <path d="M3 19l2-2" />
   </Icon>
 );
+
+export const IconHeart = ({ className }) => (
+  <Icon className={className}>
+    <path d="M20.8 6.8a4.5 4.5 0 0 0-6.4 0L12 9.2l-2.4-2.4a4.5 4.5 0 1 0-6.4 6.4L12 22l8.8-8.8a4.5 4.5 0 0 0 0-6.4z" />
+  </Icon>
+);

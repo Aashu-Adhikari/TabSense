@@ -461,6 +461,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
             isFirstSetup={!hasConfig}
             enabledComponents={COMPONENT_FILTERS.CHAT}
             compact={isSidebar}
+            showSupportButton={false}
             onSaved={() => {
               setShowSettings(false);
               const hasExistingConversation = messages.length > 0 || context.length > 0;
@@ -508,7 +509,11 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
     <div className={containerClass}>
       <div className={headerClass}>
         <button className={backBtnClass} onClick={onBack} aria-label="Back">
-          {isSidebar ? <IconArrowLeft className="sidebar-icon sidebar-icon--small" /> : '←'}
+          {isSidebar ? (
+            <IconArrowLeft className="sidebar-icon sidebar-icon--small" />
+          ) : (
+            <IconArrowLeft className="chat-icon" />
+          )}
         </button>
         {/* Display Tab Title OR Group Title */}
         <span className={tabTitleClass} title={targetTitle}>
@@ -543,7 +548,11 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
               }}
               title="Clear chat history"
             >
-              {isSidebar ? <IconTrash className="sidebar-icon sidebar-icon--small" /> : '🗑️'}
+              {isSidebar ? (
+                <IconTrash className="sidebar-icon sidebar-icon--small" />
+              ) : (
+                <IconTrash className="chat-icon" />
+              )}
             </button>
             <button
               className={exportBtnClass}
@@ -556,7 +565,11 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
               }}
               title="Export chat transcript"
             >
-              {isSidebar ? <IconFile className="sidebar-icon sidebar-icon--small" /> : '📄'}
+              {isSidebar ? (
+                <IconFile className="sidebar-icon sidebar-icon--small" />
+              ) : (
+                <IconFile className="chat-icon" />
+              )}
             </button>
           </>
         )}
@@ -565,7 +578,11 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
           onClick={() => setShowSettings(true)}
           title="Configure AI Model"
         >
-          {isSidebar ? <IconSettings className="sidebar-icon sidebar-icon--small" /> : '⚙️'}
+          {isSidebar ? (
+            <IconSettings className="sidebar-icon sidebar-icon--small" />
+          ) : (
+            <IconSettings className="chat-icon" />
+          )}
         </button>
       </div>
 
@@ -661,7 +678,11 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
                     title="Regenerate response"
                     disabled={status === 'thinking'}
                   >
-                    {isSidebar ? <IconRefresh className="sidebar-icon sidebar-icon--small" /> : '🔄'}
+                    {isSidebar ? (
+                      <IconRefresh className="sidebar-icon sidebar-icon--small" />
+                    ) : (
+                      <IconRefresh className="chat-icon" />
+                    )}
                   </button>
                 )}
                 <button
@@ -669,7 +690,11 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
                   onClick={() => copyToClipboard(m.content)}
                   title="Copy message"
                 >
-                  {isSidebar ? <IconCopy className="sidebar-icon sidebar-icon--small" /> : '📋'}
+                  {isSidebar ? (
+                    <IconCopy className="sidebar-icon sidebar-icon--small" />
+                  ) : (
+                    <IconCopy className="chat-icon" />
+                  )}
                 </button>
               </div>
             )}
@@ -681,7 +706,11 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
                   title="Resend message"
                   disabled={status === 'thinking'}
                 >
-                  {isSidebar ? <IconRefresh className="sidebar-icon sidebar-icon--small" /> : 'Resend'}
+                  {isSidebar ? (
+                    <IconRefresh className="sidebar-icon sidebar-icon--small" />
+                  ) : (
+                    <IconRefresh className="chat-icon" />
+                  )}
                 </button>
               </div>
             )}

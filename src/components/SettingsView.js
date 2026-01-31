@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { chromeApi } from '../services/chromeApi';
 import Button from './common/Button';
 import '../popup/settings.css';
+import { openPatreon } from '../utils/links';
 
 const PRESETS = {
-  free: {
+  openrouter: {
     provider: 'openrouter',
     baseUrl: 'https://openrouter.ai/api/v1',
-    model: 'google/gemini-2.0-flash-exp:free',
-    label: 'OpenRouter (Free Tier)'
+    model: '',
+    label: 'OpenRouter (Official)'
   },
   openai: {
     provider: 'openai',
@@ -29,15 +30,16 @@ export const SETTING_COMPONENTS = {
   LLM_API: 'llm_api',
   AUTO_GROUPING: 'auto_grouping',
   CHAT_HISTORY: 'chat_history',
+  UI_PREFERENCES: 'ui_preferences',
   // Add more components here as they are developed
 };
 
 // Component filter presets
 export const COMPONENT_FILTERS = {
-  ALL: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING],
-  CHAT: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY], // LLM API and chat history settings for chat interface
-  HEADER: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING], // Same as ALL for now
-  SIDEBAR: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY], // Sidebar-specific settings
+  ALL: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING, SETTING_COMPONENTS.UI_PREFERENCES],
+  CHAT: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY, SETTING_COMPONENTS.UI_PREFERENCES], // LLM API and chat history settings for chat interface
+  HEADER: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING, SETTING_COMPONENTS.UI_PREFERENCES], // Same as ALL for now
+  SIDEBAR: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY, SETTING_COMPONENTS.UI_PREFERENCES], // Sidebar-specific settings
 };
 
 const SettingsView = ({
@@ -47,13 +49,15 @@ const SettingsView = ({
   enabledComponents = COMPONENT_FILTERS.ALL,
   compact = false,
   title,
-  showBackButton = false
+  showBackButton = false,
+  showSupportButton = true
 }) => {
-  const [provider, setProvider] = useState('free');
-  const [baseUrl, setBaseUrl] = useState(PRESETS.free.baseUrl);
-  const [model, setModel] = useState(PRESETS.free.model);
+  const [provider, setProvider] = useState('openrouter');
+  const [baseUrl, setBaseUrl] = useState(PRESETS.openrouter.baseUrl);
+  const [model, setModel] = useState(PRESETS.openrouter.model);
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
+  const [defaultView, setDefaultView] = useState('sidepanel');
 
   // Auto-grouping settings
   const [autoGroupingEnabled, setAutoGroupingEnabled] = useState(true);
@@ -66,6 +70,7 @@ const SettingsView = ({
   const showLLMSettings = enabledComponents.includes(SETTING_COMPONENTS.LLM_API);
   const showAutoGrouping = enabledComponents.includes(SETTING_COMPONENTS.AUTO_GROUPING);
   const showChatHistory = enabledComponents.includes(SETTING_COMPONENTS.CHAT_HISTORY);
+  const showUiPreferences = enabledComponents.includes(SETTING_COMPONENTS.UI_PREFERENCES);
 
   // Load existing settings if editing
   useEffect(() => {
@@ -73,7 +78,7 @@ const SettingsView = ({
       if (showLLMSettings) {
         chromeApi.getLLMConfig().then(res => {
           if (res.config) {
-            setProvider(res.config.provider || 'custom');
+            setProvider(res.config.provider || 'openrouter');
             setBaseUrl(res.config.baseUrl);
             setModel(res.config.model);
             setApiKey(res.config.apiKey);
@@ -97,8 +102,15 @@ const SettingsView = ({
           setChatRetentionHours(settings.retentionHours || 24);
         });
       }
+
+      if (showUiPreferences) {
+        chrome.storage.local.get(['ui_preferences']).then(result => {
+          const settings = result.ui_preferences || {};
+          setDefaultView(settings.defaultView || 'sidepanel');
+        });
+      }
     }
-  }, [isFirstSetup, showLLMSettings, showAutoGrouping]);
+  }, [isFirstSetup, showLLMSettings, showAutoGrouping, showChatHistory, showUiPreferences]);
 
   const handleProviderChange = (newProvider) => {
     setProvider(newProvider);
@@ -134,6 +146,18 @@ const SettingsView = ({
       await chrome.storage.local.set({ chat_history_settings: chatHistorySettings });
     }
 
+    if (showUiPreferences) {
+      const uiPreferences = {
+        defaultView
+      };
+      await chrome.storage.local.set({ ui_preferences: uiPreferences });
+      try {
+        await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: defaultView === 'sidepanel' });
+      } catch (error) {
+        console.warn('Settings: Failed to update side panel behavior:', error);
+      }
+    }
+
     setLoading(false);
     onSaved();
   };
@@ -161,7 +185,7 @@ const SettingsView = ({
               onChange={(e) => handleProviderChange(e.target.value)}
               className="settings-select"
             >
-              <option value="free">OpenRouter (Free Tier)</option>
+              <option value="openrouter">OpenRouter (Official)</option>
               <option value="openai">OpenAI</option>
               <option value="custom">Custom (Any Compatible API)</option>
             </select>
@@ -197,22 +221,22 @@ const SettingsView = ({
               placeholder="sk-..."
               className="settings-input"
             />
-            {model.toLowerCase().includes('free') && (
+            {provider === 'openrouter' && (
               <p className="settings-hint">
-                Get a free key at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai</a>
+                Get a free API key at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai</a>
               </p>
             )}
           </div>
 
-          {model.toLowerCase().includes('free') && (
+          {provider === 'openrouter' && (
             <div className="free-tier-notice">
               {compact ? (
                 <>
-                  <strong>Note:</strong> Free models may experience latency or rate limits. Data logging must be enabled in OpenRouter settings.
+                  <strong>Note:</strong> OpenRouter models or free models may have rate limits depending on your plan and the selected model.
                 </>
               ) : (
                 <>
-                  ⚠️ <strong>Note:</strong> Free models may experience latency or rate limits. Data logging must be enabled in OpenRouter settings.
+                  ⚠️ <strong>Note:</strong> OpenRouter models may have rate limits depending on your plan and the selected model.
                 </>
               )}
             </div>
@@ -276,9 +300,30 @@ const SettingsView = ({
         </>
       )}
 
+      {showUiPreferences && (
+        <>
+          <h3>🧭 Interface Settings</h3>
+
+          <div className="form-group">
+            <label>Default action on toolbar click</label>
+            <select
+              value={defaultView}
+              onChange={(e) => setDefaultView(e.target.value)}
+              className="settings-select"
+            >
+              <option value="sidepanel">Open Side Panel</option>
+              <option value="popup">Open Popup</option>
+            </select>
+            <p className="settings-hint">
+              This controls whether the extension button opens the side panel or the popup.
+            </p>
+          </div>
+        </>
+      )}
+
 
       {/* If no components are enabled, show a message */}
-      {!showLLMSettings && !showAutoGrouping && (
+      {!showLLMSettings && !showAutoGrouping && !showUiPreferences && !showChatHistory && (
         <div className="empty-settings">
           <p>No settings are available for this view.</p>
         </div>
@@ -293,6 +338,16 @@ const SettingsView = ({
             className={compact ? 'sidebar-btn sidebar-btn--secondary' : ''}
           >
             Cancel
+          </Button>
+        )}
+        {showSupportButton && (
+          <Button
+            variant="secondary"
+            onClick={openPatreon}
+            disabled={loading}
+            className={compact ? 'sidebar-btn sidebar-btn--secondary' : ''}
+          >
+            Support
           </Button>
         )}
         <Button

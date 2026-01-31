@@ -60,6 +60,7 @@ module.exports = (env, argv) => {
         patterns: [
           { from: "src/manifest.json", to: "manifest.json" },
           { from: "src/ml/pretrained-model", to: "ml/pretrained-model" },
+          { from: "src/icons", to: "icons" },
           
           // 2. THIS IS HOW THE SCRAPER GETS TO BUILD FOLDER
           // It copies the file exactly as is, without minification.

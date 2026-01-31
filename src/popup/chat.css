@@ -21,6 +21,11 @@
   flex-shrink: 0;
 }
 
+.chat-icon {
+  width: 16px;
+  height: 16px;
+}
+
 .chat-header .settings-btn {
   position: relative;
   top: auto;

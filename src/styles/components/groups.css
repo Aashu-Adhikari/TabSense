@@ -110,10 +110,61 @@
     color: #cbd5e1;
   }
 
+  .group-action-btn,
+  .group-action-btn span {
+    color: #e5e7eb;
+  }
+
   .group-action-btn:hover {
     background: #1b1f24;
     border-color: #3a424b;
     color: #e5e7eb;
+  }
+
+  .group-actions {
+    border-top-color: #252a2f;
+    background: #101317;
+  }
+
+  .group-chat-shortcut {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #cbd5e1;
+  }
+
+  .group-chat-shortcut:hover {
+    background: #1b1f24;
+    color: #e5e7eb;
+  }
+
+  .ungroup-single-btn {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #9aa4b2;
+  }
+
+  .ungroup-single-btn:hover {
+    background: #3a1f24;
+    border-color: #6b2b32;
+    color: #fca5a5;
+  }
+
+  .rename-btn:hover {
+    background: #1d2a44;
+    border-color: #2d3f63;
+    color: #93c5fd;
+  }
+
+  .ungroup-btn:hover {
+    background: #3a1f24;
+    border-color: #6b2b32;
+    color: #fca5a5;
+  }
+
+  .ai-btn:hover {
+    background: #232245;
+    border-color: #3a3b6f;
+    color: #c7d2fe;
   }
 
   .ungrouped-tab-item {
@@ -583,4 +634,41 @@
 
 .emoji-item:active {
   transform: scale(0.95);
+}
+
+@media (prefers-color-scheme: dark) {
+  .group-actions {
+    border-top-color: #252a2f;
+    background: #101317;
+  }
+
+  .group-action-btn {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #e5e7eb;
+  }
+
+  .group-action-btn:hover {
+    background: #1b1f24;
+    border-color: #3a424b;
+    color: #ffffff;
+  }
+
+  .group-action-btn:disabled {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #6b7280;
+  }
+
+  .ungroup-single-btn {
+    background: #14161a;
+    border-color: #252a2f;
+    color: #9aa4b2;
+  }
+
+  .ungroup-single-btn:hover {
+    background: #3a1f24;
+    border-color: #6b2b32;
+    color: #fca5a5;
+  }
 }

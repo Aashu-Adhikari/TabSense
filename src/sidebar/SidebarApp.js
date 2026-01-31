@@ -13,10 +13,12 @@ import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView';
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView';
 import { mlCategories } from '../utils/mlCategories';
+import { openPatreon } from '../utils/links';
 import {
   IconChat,
   IconChevrons,
   IconFolder,
+  IconHeart,
   IconRefresh,
   IconSettings,
   IconSort
@@ -304,6 +306,15 @@ function SidebarApp() {
       </div>
       <div className="activity-bar-spacer" />
       <div
+        className="activity-bar-item"
+        onClick={openPatreon}
+        title="Support"
+      >
+        <div className="activity-bar-icon">
+          <IconHeart className="sidebar-icon" />
+        </div>
+      </div>
+      <div
         className={`activity-bar-item ${activeView === 'settings' ? 'active' : ''}`}
         onClick={() => setActiveView('settings')}
         title="Settings"
@@ -334,8 +345,14 @@ function SidebarApp() {
 
     return (
       <>
-        <div className="sidebar-header">
-          <span className="sidebar-header-title">TabSynth</span>
+        <div className="sidebar-header sidebar-header--brand">
+          <div className="sidebar-brand">
+            <img className="sidebar-brand-icon" src="icons/icon48.png" alt="" />
+            <div className="sidebar-brand-text">
+              <div className="sidebar-brand-title">TabSense</div>
+              <div className="sidebar-brand-tagline">Organize. Search. Chat.</div>
+            </div>
+          </div>
           <div className="sidebar-header-actions">
             <button className="sidebar-action-btn" onClick={fetchGroupsAndTabs} title="Refresh">
               <IconRefresh className="sidebar-icon sidebar-icon--small" />
@@ -597,6 +614,7 @@ function SidebarApp() {
           <SettingsView
             enabledComponents={COMPONENT_FILTERS.SIDEBAR}
             compact
+            showSupportButton={false}
             onSaved={() => {
               fetchGroupsAndTabs();
             }}

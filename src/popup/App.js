@@ -14,7 +14,8 @@ import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView'; // <-- NEW IMPORT
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView'; // <-- NEW IMPORT
 import { mlCategories } from '../utils/mlCategories';
-import { IconChat, IconChevrons, IconSort } from '../components/common/Icons';
+import { IconChat, IconChevrons, IconHeart, IconRefresh, IconSettings, IconSort } from '../components/common/Icons';
+import { openPatreon } from '../utils/links';
 
 function App() {
   const {
@@ -277,6 +278,7 @@ function App() {
         enabledComponents={COMPONENT_FILTERS.HEADER}
         title="⚙️ Settings"
         showBackButton
+        showSupportButton={false}
         onSaved={() => {
           setShowSettings(false);
           fetchGroupsAndTabs(); // Refresh in case settings affected grouping
@@ -303,15 +305,39 @@ function App() {
   return (
     <div className="popup-container">
       <header className="popup-header">
-        <h1>🪄 TabSynth</h1>
-        <button
-          className="settings-btn"
-          onClick={() => setShowSettings(true)}
-          title="Settings"
-        >
-          ⚙️
-        </button>
-        <p className="subtitle">Smart Tab Groups</p>
+        <div className="popup-brand">
+          <img className="popup-brand-icon" src="icons/icon48.png" alt="" />
+          <div className="popup-brand-text">
+            <div className="popup-brand-title">TabSense</div>
+            <div className="popup-brand-tagline">Organize. Search. Chat.</div>
+          </div>
+        </div>
+        <div className="header-actions">
+          <button
+            className="header-icon-btn"
+            onClick={fetchGroupsAndTabs}
+            title="Refresh"
+            aria-label="Refresh"
+          >
+            <IconRefresh className="popup-icon" />
+          </button>
+          <button
+            className="header-icon-btn"
+            onClick={openPatreon}
+            title="Support"
+            aria-label="Support"
+          >
+            <IconHeart className="popup-icon" />
+          </button>
+          <button
+            className="header-icon-btn"
+            onClick={() => setShowSettings(true)}
+            title="Settings"
+            aria-label="Settings"
+          >
+            <IconSettings className="popup-icon" />
+          </button>
+        </div>
       </header>
 
       <div className="action-grid">
@@ -528,9 +554,6 @@ function App() {
         )}
       </main>
 
-      <footer className="popup-footer">
-        <Button variant="secondary" onClick={fetchGroupsAndTabs}>🔄 Refresh</Button>
-      </footer>
     </div>
   );
 }

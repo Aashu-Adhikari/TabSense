@@ -1,11 +1,21 @@
 {
   "manifest_version": 3,
-  "name": "TabSynth (Dev)",
-  "version": "1.0.0",
+  "name": "TabSense",
+  "version": "1.1.0",
   "description": "Tab organizer and research assistant.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "TabSynth"
+    "default_title": "TabSense",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "background": {
     "service_worker": "background.js"
@@ -15,7 +25,8 @@
     "tabGroups",
     "storage",
     "scripting",
-    "sidePanel"
+    "sidePanel",
+    "activeTab"
   ],
   "side_panel": {
     "default_path": "sidepanel.html"
@@ -27,7 +38,7 @@
     {
       "resources": [
         "ml/pretrained-model/model.json",
-        "ml/pretrained-model/group1-shard1of1.bin"
+        "ml/pretrained-model/weights.bin"
       ],
       "matches": [
         "<all_urls>"

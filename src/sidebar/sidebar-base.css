@@ -11,6 +11,7 @@
   --activity-bar-item-active-color: #111827;
   --activity-bar-item-active-border: #111827;
   --border-color: #e5e7eb;
+  --text-color: #111827;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,6 +23,7 @@
     --activity-bar-item-active-color: #e5e7eb;
     --activity-bar-item-active-border: #2a3138;
     --border-color: #252a2f;
+    --text-color: #e5e7eb;
   }
 }
 
@@ -150,6 +152,51 @@ body {
   letter-spacing: 0.4px;
   color: var(--activity-bar-item-color);
   flex-shrink: 0;
+}
+
+.sidebar-header--brand {
+  height: auto;
+  padding: 8px 10px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  color: #111827;
+}
+
+.sidebar-header--brand .sidebar-header-actions {
+  align-items: center;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.sidebar-brand-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-brand-title {
+  font-size: 14px;
+  line-height: 1;
+  color: #111827;
+}
+
+.sidebar-brand-tagline {
+  font-size: 11px;
+  line-height: 1.1;
+  color: #6b7280;
+  font-weight: 400;
 }
 
 .sidebar-header-title {
@@ -508,6 +555,14 @@ body {
     background: #14161a;
     border-color: #2a3138;
   }
+
+  .sidebar-search-input {
+    color: #e5e7eb;
+  }
+
+  .sidebar-search-input::placeholder {
+    color: #9aa4b2;
+  }
 }
 
 .sidebar-search-input-wrapper:focus-within {
@@ -521,7 +576,7 @@ body {
   background: transparent;
   width: 100%;
   font-size: 10px;
-  color: inherit;
+  color: var(--text-color);
   outline: none;
   padding: 0;
 }
@@ -627,6 +682,18 @@ body {
   }
 
   .sidebar-header {
+    color: #9aa4b2;
+  }
+
+  .sidebar-header--brand {
+    color: #e5e7eb;
+  }
+
+  .sidebar-brand-title {
+    color: #e5e7eb;
+  }
+
+  .sidebar-brand-tagline {
     color: #9aa4b2;
   }
 
