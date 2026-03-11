@@ -132,3 +132,17 @@ export const IconSend = ({ className }) => (
     <polygon points="22 2 15 22 11 13 2 9 22 2" />
   </Icon>
 );
+
+export const IconUndo = ({ className }) => (
+  <Icon className={className}>
+    <path d="M9 14L4 9l5-5" />
+    <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
+  </Icon>
+);
+
+export const IconRedo = ({ className }) => (
+  <Icon className={className}>
+    <path d="M15 14l5-5-5-5" />
+    <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" />
+  </Icon>
+);

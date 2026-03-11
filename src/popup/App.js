@@ -3,18 +3,15 @@ import React, { useState, useEffect } from 'react';
 import './base.css';
 import '../styles/components/search.css';
 import '../styles/components/groups.css';
-import '../styles/components/toast.css';
 import './action-grid.css';
 import { useGroups } from '../hooks/useGroups';
 import { useSearch } from '../hooks/useSearch';
-// import { useMlClassification } from '../hooks/useMlClassification'; // Removed - lazy init instead
 import GroupCard from '../components/GroupCard';
 import SearchResultsView from '../components/SearchResultsView';
 import Button from '../components/common/Button';
 import ChatView from '../components/ChatView';
-import CreateGroupView from '../components/CreateGroupView'; // <-- NEW IMPORT
-import UndoToast from '../components/common/UndoToast';
-import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView'; // <-- NEW IMPORT
+import CreateGroupView from '../components/CreateGroupView';
+import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView';
 import { mlCategories } from '../utils/mlCategories';
 import {
   IconChat,
@@ -24,7 +21,9 @@ import {
   IconSettings,
   IconSort,
   IconSidebar,
-  IconExternal
+  IconExternal,
+  IconUndo,
+  IconRedo
 } from '../components/common/Icons';
 import { openPatreon } from '../utils/links';
 
@@ -39,7 +38,9 @@ function App() {
     handleUngroupAll,
     handleDeleteGroup,
     handleUndoDelete,
-    undoState,
+    handleRedoDelete,
+    undoStack,
+    redoStack,
     handleRenameGroup,
     handleAddToGroup,
     handleOpenTab,
@@ -362,6 +363,24 @@ function App() {
         <div className="header-actions">
           <button
             className="header-icon-btn"
+            onClick={handleUndoDelete}
+            disabled={undoStack.length === 0}
+            title={`Undo Delete (${undoStack.length} available)`}
+            aria-label="Undo"
+          >
+            <IconUndo className="popup-icon" />
+          </button>
+          <button
+            className="header-icon-btn"
+            onClick={handleRedoDelete}
+            disabled={redoStack.length === 0}
+            title={`Redo Delete (${redoStack.length} available)`}
+            aria-label="Redo"
+          >
+            <IconRedo className="popup-icon" />
+          </button>
+          <button
+            className="header-icon-btn"
             onClick={toggleDefaultView}
             title={defaultView === 'sidepanel' ? 'Switch to Popup Mode' : 'Switch to Sidebar Mode'}
           >
@@ -612,13 +631,6 @@ function App() {
           </>
         )}
       </main>
-
-      {undoState && (
-        <UndoToast
-          expiresAt={undoState.expiresAt}
-          onUndo={handleUndoDelete}
-        />
-      )}
     </div>
   );
 }

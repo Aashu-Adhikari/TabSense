@@ -238,6 +238,16 @@ body {
   color: var(--activity-bar-item-active-color);
 }
 
+.sidebar-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sidebar-action-btn:disabled:hover {
+  background: none;
+  color: #6b7280;
+}
+
 /* ============================================= */
 /* ===== SCROLLABLE MAIN CONTENT ===== */
 /* ============================================= */

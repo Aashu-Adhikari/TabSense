@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import './sidebar-base.css';
 import '../styles/components/search.css';
 import '../styles/components/groups.css';
-import '../styles/components/toast.css';
 import './sidebar-chat.css';
 import { useGroups } from '../hooks/useGroups';
 import { useSearch } from '../hooks/useSearch';
@@ -12,7 +11,6 @@ import SearchResultsView from '../components/SearchResultsView';
 import Button from '../components/common/Button';
 import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView';
-import UndoToast from '../components/common/UndoToast';
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView';
 import { mlCategories } from '../utils/mlCategories';
 import { openPatreon } from '../utils/links';
@@ -25,7 +23,9 @@ import {
   IconSettings,
   IconSort,
   IconSidebar,
-  IconExternal
+  IconExternal,
+  IconUndo,
+  IconRedo
 } from '../components/common/Icons';
 
 function SidebarApp() {
@@ -39,7 +39,9 @@ function SidebarApp() {
     handleUngroupAll,
     handleDeleteGroup,
     handleUndoDelete,
-    undoState,
+    handleRedoDelete,
+    undoStack,
+    redoStack,
     handleRenameGroup,
     handleAddToGroup,
     handleOpenTab,
@@ -407,6 +409,24 @@ function SidebarApp() {
           <div className="sidebar-header-actions">
             <button
               className="sidebar-action-btn"
+              onClick={handleUndoDelete}
+              disabled={undoStack.length === 0}
+              title={`Undo Delete (${undoStack.length} available)`}
+              aria-label="Undo"
+            >
+              <IconUndo className="sidebar-icon sidebar-icon--small" />
+            </button>
+            <button
+              className="sidebar-action-btn"
+              onClick={handleRedoDelete}
+              disabled={redoStack.length === 0}
+              title={`Redo Delete (${redoStack.length} available)`}
+              aria-label="Redo"
+            >
+              <IconRedo className="sidebar-icon sidebar-icon--small" />
+            </button>
+            <button
+              className="sidebar-action-btn"
               onClick={toggleDefaultView}
               title={defaultView === 'sidepanel' ? 'Switch to Popup Mode' : 'Switch to Sidebar Mode'}
             >
@@ -696,13 +716,6 @@ function SidebarApp() {
         {activeView === 'chat' && renderChatView()}
         {activeView === 'settings' && renderSettingsView()}
       </div>
-
-      {undoState && (
-        <UndoToast
-          expiresAt={undoState.expiresAt}
-          onUndo={handleUndoDelete}
-        />
-      )}
     </div>
   );
 }

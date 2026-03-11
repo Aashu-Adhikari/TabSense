@@ -76,6 +76,16 @@
   background: rgba(59, 130, 246, 0.08);
 }
 
+.header-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.header-icon-btn:disabled:hover {
+  color: #64748b;
+  background: transparent;
+}
+
 .popup-icon {
   width: 16px;
   height: 16px;
