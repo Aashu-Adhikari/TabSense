@@ -70,8 +70,48 @@ export const useGroups = () => {
     }
   };
 
+  const [undoState, setUndoState] = useState(null);
+
+  const handleDeleteGroup = async (groupId) => {
+    try {
+      const response = await chromeApi.deleteGroup(groupId);
+      if (response && response.success) {
+        const groupData = response.groupData;
+        const timestamp = Date.now();
+
+        setUndoState({
+          groupData,
+          timestamp,
+          expiresAt: timestamp + 60000 // 1 minute
+        });
+
+        // Auto-clear after 60 seconds
+        setTimeout(() => {
+          setUndoState(prev => (prev?.timestamp === timestamp ? null : prev));
+        }, 60000);
+
+        await fetchGroupsAndTabs();
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleUndoDelete = async () => {
+    if (!undoState) return;
+    try {
+      const response = await chromeApi.undoDeleteGroup(undoState.groupData);
+      if (response && response.success) {
+        setUndoState(null);
+        await fetchGroupsAndTabs();
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleUngroupAll = async (groupId, skipConfirm = false) => {
-    if (!skipConfirm && !confirm("Ungroup all tabs in this group?")) return;
+    if (!skipConfirm && !confirm("Ungroup all tabs in this group? (Tabs will stay open)")) return;
 
     try {
       await chromeApi.ungroupAllTabs(groupId);
@@ -104,7 +144,12 @@ export const useGroups = () => {
   const handleOpenTab = (tabId, windowId) => {
     chrome.tabs.update(tabId, { active: true });
     chrome.windows.update(windowId, { focused: true });
-    window.close();
+
+    // Check if we are in a popup (extension's own window/popup has tabId)
+    // or just close if it's the popup
+    if (typeof window !== 'undefined' && window.close) {
+      window.close();
+    }
   };
 
   const handleSaveDomainSetting = async (domain, settings) => {
@@ -175,9 +220,12 @@ export const useGroups = () => {
     loading,
     error,
     domainSettings,
+    undoState,
     fetchGroupsAndTabs,
     handleUngroupSingleTab,
     handleUngroupAll,
+    handleDeleteGroup,
+    handleUndoDelete,
     handleRenameGroup,
     handleAddToGroup,
     handleOpenTab,

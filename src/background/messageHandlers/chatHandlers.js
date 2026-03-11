@@ -54,7 +54,7 @@ function getPageContent() {
     // 1. Try to find main content wrapper
     let text = "";
     const mainElement = document.querySelector('main') || document.querySelector('article') || document.querySelector('#content');
-    
+
     if (mainElement && mainElement.innerText.length > 50) {
       text = mainElement.innerText;
     } else {
@@ -63,7 +63,7 @@ function getPageContent() {
 
     if (!text || text.trim().length === 0) return "NO_CONTENT_FOUND";
 
-    return text.replace(/\s+/g, ' ').trim().substring(0, 50000);
+    return text.replace(/\s+/g, ' ').trim().substring(0, 90000);
   } catch (e) {
     return "NO_CONTENT_FOUND";
   }
@@ -105,10 +105,10 @@ export function handleExtractGroupContent(request, sendResponse) {
 
         const content = results?.[0]?.result;
         if (!content || content === "NO_CONTENT_FOUND") return null;
-        
+
         // Truncate per-tab content
-        const truncated = content.substring(0, 20000); 
-        
+        const truncated = content.substring(0, 20000);
+
         return {
           tabId: tab.id,
           title: tab.title,
@@ -123,9 +123,9 @@ export function handleExtractGroupContent(request, sendResponse) {
 
     // 4. Wait for all tabs to be ready and scraped
     const results = await Promise.all(scrapePromises);
-    
+
     const validResults = results.filter(r => r !== null);
-    
+
     if (validResults.length === 0) {
       sendResponse({ success: false, error: "No readable tabs found in this group." });
       return;
@@ -141,9 +141,9 @@ export function handleExtractGroupContent(request, sendResponse) {
       ---
     `).join('\n');
 
-    sendResponse({ 
-      success: true, 
-      content: combinedContext, 
+    sendResponse({
+      success: true,
+      content: combinedContext,
       count: validResults.length,
       tabs: validResults.map(r => ({ id: r.tabId, title: r.title, url: r.url }))
     });
@@ -166,7 +166,7 @@ async function* streamSSE(responseBody) {
 
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split('\n');
-    buffer = lines.pop(); 
+    buffer = lines.pop();
 
     for (const line of lines) {
       const trimmed = line.trim();
@@ -184,7 +184,7 @@ async function* streamSSE(responseBody) {
           // const reasoning = delta.reasoning || delta.reasoning_content || delta.thinking;
           // if (reasoning) yield `*${reasoning}*`; 
         }
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 }
@@ -233,35 +233,37 @@ export function handleExtractTabContent(request, sendResponse) {
 
     chrome.scripting.executeScript({
       target: { tabId },
-      func: getPageContent, 
+      func: getPageContent,
     })
-    .then(results => {
-      if (!results || !results[0]) {
-        sendResponse({ success: false, error: "Script injection failed" });
-        return;
-      }
-      
-      const content = results[0].result;
-      
-      if (!content || content === "NO_CONTENT_FOUND") {
-        sendResponse({ success: false, error: "Page appears empty." });
-      } else {
-        sendResponse({ success: true, content });
-      }
-    })
-    .catch(err => {
-      sendResponse({ success: false, error: "Cannot access page (Security Restriction)" });
-    });
+      .then(results => {
+        if (!results || !results[0]) {
+          sendResponse({ success: false, error: "Script injection failed" });
+          return;
+        }
+
+        const content = results[0].result;
+
+        if (!content || content === "NO_CONTENT_FOUND") {
+          sendResponse({ success: false, error: "Page appears empty." });
+        } else {
+          sendResponse({ success: true, content });
+        }
+      })
+      .catch(err => {
+        sendResponse({ success: false, error: "Cannot access page (Security Restriction)" });
+      });
   });
 
   return true;
 }
 
 export function handleChatStreamConnection(port) {
+  const abortController = new AbortController();
+
   port.onMessage.addListener(async (request) => {
     const { messages, context } = request;
     try {
-      const responseBody = await llmService.chat(messages, context);
+      const responseBody = await llmService.chat(messages, context, abortController.signal);
       if (!responseBody) {
         port.postMessage({ type: 'error', text: "Empty response" });
         return;
@@ -271,8 +273,17 @@ export function handleChatStreamConnection(port) {
       }
       port.postMessage({ type: 'end' });
     } catch (error) {
-      port.postMessage({ type: 'error', text: error.message });
+      if (error.name === 'AbortError') {
+        console.log("Chat stream aborted by user");
+      } else {
+        port.postMessage({ type: 'error', text: error.message });
+      }
     }
+  });
+
+  port.onDisconnect.addListener(() => {
+    console.log("Chat port disconnected, aborting generation...");
+    abortController.abort();
   });
 }
 
@@ -292,5 +303,99 @@ export function handleSwitchToTab(request, sendResponse) {
   const { tabId } = request;
   chrome.tabs.update(tabId, { active: true });
   sendResponse({ success: true });
+  return true;
+}
+
+// Function to find and scroll to text on a page, then highlight it
+function findAndScrollToText(text) {
+  if (!text) return;
+
+  // Normalize text for better matching (handle smart quotes and extra whitespace)
+  const normalize = t => t.replace(/[\u201C\u201D\u2018\u2019]/g, '"').replace(/\s+/g, ' ').trim();
+  const searchStr = normalize(text);
+
+  // Use window.find to locate and scroll to text
+  // Parameters: (string, caseSensitive, backwards, wrapAround, wholeWord, searchInFrames, showDialog)
+  let found = window.find(searchStr, false, false, true, false, true, false);
+
+  // Try fallback if first attempt failed (e.g. without quotes if LLM added them)
+  if (!found && searchStr.startsWith('"') && searchStr.endsWith('"')) {
+    found = window.find(searchStr.slice(1, -1), false, false, true, false, true, false);
+  }
+
+  if (found) {
+    // Get the current selection
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+
+      // Create a temporary highlight span
+      const span = document.createElement('span');
+      span.style.backgroundColor = '#ffff00';
+      span.style.transition = 'background-color 2s ease-out';
+      span.style.display = 'inline'; // Inline usually works better for selection
+
+      // Wrap the selected text in the span
+      try {
+        range.surroundContents(span);
+
+        // Clear the selection to avoid keeping text selected
+        selection.removeAllRanges();
+
+        // Fade out after 2 seconds
+        setTimeout(() => {
+          span.style.backgroundColor = 'transparent';
+          setTimeout(() => {
+            // Remove the span and replace with its contents
+            if (span.parentNode) {
+              const textNode = document.createTextNode(span.textContent);
+              span.parentNode.replaceChild(textNode, span);
+            }
+          }, 2000);
+        }, 2000);
+      } catch (e) {
+        // surroundContents may fail if selection spans multiple elements
+        // Fallback: apply style to selection if possible or just log
+        console.warn('Failed to highlight text:', e);
+      }
+    }
+  } else {
+    console.log('Text not found:', searchStr);
+  }
+}
+
+export function handleActivateTab(request, sendResponse) {
+  const { tabId, quote } = request;
+
+  // First, ensure the tab is ready (not discarded)
+  ensureTabIsReady(tabId).then((tab) => {
+    // tab is returned from ensureTabIsReady
+    // Activate the tab and focus the window
+    chrome.tabs.update(tabId, { active: true }, () => {
+      // Use tab.windowId instead of tabId (bug fix)
+      chrome.windows.update(tab.windowId, { focused: true }, () => {
+        sendResponse({ success: true });
+
+        // If quote provided, inject script to find and highlight after a short delay
+        if (quote) {
+          setTimeout(() => {
+            chrome.scripting.executeScript({
+              target: { tabId },
+              func: findAndScrollToText,
+              args: [quote]
+            }).catch(err => {
+              console.warn('Failed to execute highlight script:', err);
+            });
+          }, 500); // Small delay to ensure page is focused
+        }
+      });
+    });
+  }).catch(err => {
+    console.warn('Tab not ready:', err);
+    // Still try to activate even if there was an issue
+    chrome.tabs.update(tabId, { active: true });
+    sendResponse({ success: true, warning: 'Tab activation attempted' });
+  });
+
   return true;
 }

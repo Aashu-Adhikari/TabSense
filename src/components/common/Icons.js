@@ -104,3 +104,31 @@ export const IconHeart = ({ className }) => (
     <path d="M20.8 6.8a4.5 4.5 0 0 0-6.4 0L12 9.2l-2.4-2.4a4.5 4.5 0 1 0-6.4 6.4L12 22l8.8-8.8a4.5 4.5 0 0 0 0-6.4z" />
   </Icon>
 );
+
+export const IconSidebar = ({ className }) => (
+  <Icon className={className}>
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <line x1="9" y1="3" x2="9" y2="21" />
+  </Icon>
+);
+
+export const IconExternal = ({ className }) => (
+  <Icon className={className}>
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    <polyline points="15 3 21 3 21 9" />
+    <line x1="10" y1="14" x2="21" y2="3" />
+  </Icon>
+);
+
+export const IconStop = ({ className }) => (
+  <Icon className={className}>
+    <rect x="6" y="6" width="12" height="12" rx="2" />
+  </Icon>
+);
+
+export const IconSend = ({ className }) => (
+  <Icon className={className}>
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+  </Icon>
+);

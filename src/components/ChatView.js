@@ -11,7 +11,9 @@ import {
   IconFile,
   IconRefresh,
   IconSettings,
-  IconTrash
+  IconTrash,
+  IconStop,
+  IconSend
 } from './common/Icons';
 
 // Chat storage utilities
@@ -114,65 +116,7 @@ const QUICK_CHIPS = [
   }
 ];
 
-// Helper function to process citation text into clickable elements
-// Converts patterns like [Source 1] or [Source 1: Tab Title] into clickable spans
-function processCitationText(text, tabMetadata, onCitationClick) {
-  // Regex to match [Source N] or [Source N: Title] patterns
-  const citationRegex = /\[Source\s+(\d+)(?:[:\s]+([^\]]+))?\]/gi;
-  
-  const parts = [];
-  let lastIndex = 0;
-  let match;
-  
-  while ((match = citationRegex.exec(text)) !== null) {
-    // Add text before the citation
-    if (match.index > lastIndex) {
-      parts.push(text.substring(lastIndex, match.index));
-    }
-    
-    const sourceNum = parseInt(match[1]);
-    const customTitle = match[2] ? match[2].trim() : null;
-    const tabInfo = tabMetadata[sourceNum - 1];
-    const title = customTitle || (tabInfo ? tabInfo.title : `Source ${sourceNum}`);
-    
-    parts.push(
-      <button
-        key={`citation-${match.index}`}
-        className="citation-link"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onCitationClick(sourceNum);
-        }}
-        title={`Jump to: ${tabInfo?.title || `Source ${sourceNum}`}`}
-      >
-        <span className="citation-icon">🔗</span>
-        <span className="citation-label">{title}</span>
-      </button>
-    );
-    
-    lastIndex = citationRegex.lastIndex;
-  }
-  
-  // Add remaining text
-  if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex));
-  }
-  
-  return parts;
-}
 
-// Component to render text with citation processing
-function CitationText({ children, tabMetadata, onCitationClick }) {
-  const text = children || '';
-  const hasCitations = /\[Source\s+\d+\]/i.test(text);
-  
-  if (!hasCitations || !tabMetadata.length) {
-    return <>{text}</>;
-  }
-  
-  return <>{processCitationText(text, tabMetadata, onCitationClick)}</>;
-}
 
 const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
   // Configuration State
@@ -180,20 +124,24 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [checkingConfig, setCheckingConfig] = useState(true);
   const [isFreeTier, setIsFreeTier] = useState(false);
-  
+
   // Chat State
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [context, setContext] = useState('');
   const [tabMetadata, setTabMetadata] = useState([]); // Store tab IDs for citations
   const [lastUserMessage, setLastUserMessage] = useState(null); // Store last user message for retry
+  const [pendingGroupRefresh, setPendingGroupRefresh] = useState(false);
 
   // UI State
   const [status, setStatus] = useState('initializing');
-  
+
   const messagesEndRef = useRef(null);
   const aiResponseBufferRef = useRef('');
   const saveTimeoutRef = useRef(null);
+  const groupTabIdsRef = useRef(null);
+  const textareaRef = useRef(null);
+  const stopStreamRef = useRef(null);
 
   const targetTitle = tab ? tab.title : (group ? group.title : "Context");
 
@@ -214,6 +162,65 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
     };
     initializeChat();
   }, []);
+
+  useEffect(() => {
+    if (!group) return;
+
+    const normalizeIds = (ids = []) => {
+      const seen = new Set();
+      const result = [];
+      ids.forEach((id) => {
+        if (typeof id !== 'number' || seen.has(id)) return;
+        seen.add(id);
+        result.push(id);
+      });
+      return result.sort((a, b) => a - b);
+    };
+
+    const areSameIds = (prevIds, nextIds) => {
+      if (!prevIds || !nextIds) return false;
+      if (prevIds.length !== nextIds.length) return false;
+      for (let i = 0; i < prevIds.length; i += 1) {
+        if (prevIds[i] !== nextIds[i]) return false;
+      }
+      return true;
+    };
+
+    const handleGroupTabIds = (nextIds) => {
+      const normalized = normalizeIds(nextIds);
+      const previous = groupTabIdsRef.current;
+      groupTabIdsRef.current = normalized;
+
+      if (!previous) return;
+      if (areSameIds(previous, normalized)) return;
+
+      if (status === 'thinking' || status === 'extracting') {
+        setPendingGroupRefresh(true);
+      } else {
+        refreshGroupContext();
+      }
+    };
+
+    const handleStorageChange = (changes, areaName) => {
+      if (areaName !== 'local' || !changes.cachedGroups) return;
+      const cachedGroups = changes.cachedGroups.newValue || [];
+      const updatedGroup = cachedGroups.find((entry) => entry.id === group.id);
+      if (updatedGroup?.tabs) {
+        handleGroupTabIds(updatedGroup.tabs.map((tab) => tab.id));
+      }
+    };
+
+    chrome.storage.local.get(['cachedGroups'], (result) => {
+      const cachedGroups = result.cachedGroups || [];
+      const cachedGroup = cachedGroups.find((entry) => entry.id === group.id);
+      if (cachedGroup?.tabs) {
+        handleGroupTabIds(cachedGroup.tabs.map((tab) => tab.id));
+      }
+    });
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange);
+  }, [group, status]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -273,9 +280,9 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
 
   const extractContent = async () => {
     setStatus('extracting');
-    
+
     let response;
-    
+
     // LOGIC FORK: TAB vs GROUP
     if (tab) {
       console.log("ChatView: Extracting Tab", tab.id);
@@ -288,10 +295,14 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
     if (response.success && response.content) {
       setContext(response.content);
       setTabMetadata(response.tabs || []); // Store tab metadata for citations
-      
-      const introMsg = tab 
-        ? `I've read **${targetTitle}**. What would you like to know?`
-        : `I've read **${response.count} tabs** in **${targetTitle}**. Ask me about them!`;
+
+      let introMsg = '';
+      if (tab) {
+        introMsg = `I've read **${targetTitle}**. What would you like to know?`;
+      } else {
+        const titleList = response.tabs ? response.tabs.map(t => `- ${t.title}`).join('\n') : '';
+        introMsg = `I've read **${response.count} tabs** in **${targetTitle}**:\n\n${titleList}\n\nAsk me about them!`;
+      }
 
       setMessages([{ role: 'assistant', content: introMsg }]);
       setStatus('ready');
@@ -301,14 +312,74 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
     }
   };
 
-  // Handle citation click - switch to the referenced tab
-  const handleCitationClick = async (sourceNum) => {
-    console.log('Citation clicked:', sourceNum, tabMetadata);
-    const tabIndex = sourceNum - 1;
-    if (tabMetadata[tabIndex]) {
-      await chromeApi.switchToTab(tabMetadata[tabIndex].id);
+  const refreshGroupContext = async () => {
+    if (!group) return;
+    setStatus('extracting');
+
+    const response = await chromeApi.extractGroupContent(group.id);
+
+    if (response.success && response.content) {
+      setContext(response.content);
+      setTabMetadata(response.tabs || []);
+      setMessages((prev) => {
+        if (prev.length === 0) {
+          return prev;
+        }
+        return [...prev, {
+          role: 'assistant',
+          content: `Context updated with **${response.count} tabs** from **${targetTitle}**.`
+        }];
+      });
+      setStatus('ready');
     } else {
-      console.warn('Tab metadata not found for source:', sourceNum);
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: `**Context update failed:** ${response.error || 'No readable content found.'}`,
+        isError: true
+      }]);
+      setStatus('ready');
+    }
+  };
+
+  useEffect(() => {
+    if (!group || !pendingGroupRefresh) return;
+    if (status === 'thinking' || status === 'extracting') return;
+    setPendingGroupRefresh(false);
+    refreshGroupContext();
+  }, [group, pendingGroupRefresh, status]);
+
+  // Handle citation click - switch to the referenced tab
+  // For new format: handleCitationClick(title, quote)
+  // For old format: handleCitationClick(sourceNum) where sourceNum is a number
+  const handleCitationClick = async (arg1, arg2) => {
+    // Check if this is new format (title, quote) or old format (sourceNum)
+    if (typeof arg1 === 'number') {
+      // Old format: sourceNum
+      const sourceNum = arg1;
+      console.log('Citation clicked (old format):', sourceNum, tabMetadata);
+      const tabIndex = sourceNum - 1;
+      if (tabMetadata[tabIndex]) {
+        await chromeApi.switchToTab(tabMetadata[tabIndex].id);
+      } else {
+        console.warn('Tab metadata not found for source:', sourceNum);
+      }
+    } else {
+      // New format: (title, quote)
+      const title = arg1;
+      const quote = arg2;
+      console.log('Citation clicked (new format):', title, quote);
+
+      // Find the tab with matching title
+      const matchingTab = tabMetadata.find(tab =>
+        tab.title.toLowerCase().includes(title.toLowerCase()) ||
+        title.toLowerCase().includes(tab.title.toLowerCase())
+      );
+
+      if (matchingTab) {
+        await chromeApi.activateTab(matchingTab.id, quote);
+      } else {
+        console.warn('Tab not found for title:', title);
+      }
     }
   };
 
@@ -338,10 +409,10 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
     const apiMessages = [...recentHistory, userMsg];
 
     // --- NEW CONNECTION LOGIC ---
-    aiResponseBufferRef.current = ''; 
-    
+    aiResponseBufferRef.current = '';
+
     // Start the stream
-    chromeApi.connectChatStream(apiMessages, context, {
+    const stopStream = chromeApi.connectChatStream(apiMessages, context, {
       onChunk: (text) => {
         aiResponseBufferRef.current += text;
         setMessages(prev => {
@@ -357,6 +428,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
       onEnd: () => {
         console.log("Stream finished successfully");
         setStatus('ready');
+        stopStreamRef.current = null;
       },
       onError: (errText) => {
         console.error("Stream error:", errText);
@@ -366,8 +438,19 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
           isError: true // Mark as error message for special rendering
         }]);
         setStatus('ready');
+        stopStreamRef.current = null;
       }
     });
+
+    stopStreamRef.current = stopStream;
+  };
+
+  const handleStopGeneration = () => {
+    if (stopStreamRef.current) {
+      stopStreamRef.current();
+      stopStreamRef.current = null;
+      setStatus('ready');
+    }
   };
 
   const handleRegenerate = async () => {
@@ -432,6 +515,22 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
     }, 100);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
+    }
+  };
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const maxHeight = isSidebar ? 80 : 120;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, maxHeight)}px`;
+    }
+  }, [input, isSidebar]);
+
   // --- RENDER HELPERS ---
 
   if (checkingConfig) {
@@ -443,7 +542,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
     const headerClass = isSidebar ? 'sidebar-chat-header' : 'chat-header';
     const backBtnClass = isSidebar ? 'sidebar-back-btn' : 'back-btn';
     const bodyClass = isSidebar ? 'sidebar-chat-body-centered' : 'chat-body-centered';
-    
+
     return (
       <div className={containerClass}>
         <div className={headerClass}>
@@ -457,7 +556,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
           <span>{hasConfig ? 'AI Settings' : 'Setup AI Chat'}</span>
         </div>
         <div className={bodyClass}>
-          <SettingsView 
+          <SettingsView
             isFirstSetup={!hasConfig}
             enabledComponents={COMPONENT_FILTERS.CHAT}
             compact={isSidebar}
@@ -573,8 +672,8 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
             </button>
           </>
         )}
-        <button 
-          className={settingsBtnClass} 
+        <button
+          className={settingsBtnClass}
           onClick={() => setShowSettings(true)}
           title="Configure AI Model"
         >
@@ -590,7 +689,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
       {showChips && (
         <div className={quickChipsClass}>
           {QUICK_CHIPS.map(chip => (
-            <button 
+            <button
               key={chip.id}
               className={chipBtnClass}
               onClick={() => handleChipClick(chip)}
@@ -606,7 +705,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
       <div className={messagesClass}>
         {status === 'extracting' && (
           <div className="loading-state">
-            <span className="btn-spinner" style={{display:'inline-block', marginRight:'8px'}}></span>
+            <span className="btn-spinner" style={{ display: 'inline-block', marginRight: '8px' }}></span>
             Reading page content...
           </div>
         )}
@@ -624,6 +723,28 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
                       return parts.map(part => `[Source ${part}]`).join(' ');
                     }
                   )
+                  // Process new format: [[Source: Title | "snippet"]] or [Source: Title | "snippet"]
+                  .replace(
+                    /\[{1,2}Source:\s*(.+?)\s*\|\s*"(.*?)"\]{1,2}/gi,
+                    (match, title, snippet) => {
+                      const trimmedTitle = title.trim();
+                      // Find the index in tabMetadata to restore numbered citations
+                      const index = tabMetadata.findIndex(tab =>
+                        tab.title.toLowerCase().includes(trimmedTitle.toLowerCase()) ||
+                        trimmedTitle.toLowerCase().includes(tab.title.toLowerCase())
+                      );
+
+                      const sourceNum = index !== -1 ? index + 1 : '?';
+
+                      // Encode both title and snippet in URL parameters
+                      const params = new URLSearchParams({
+                        title: trimmedTitle,
+                        quote: snippet
+                      });
+                      return `[${sourceNum}](/citation-new?${params.toString()})`;
+                    }
+                  )
+                  // Process old format: [Source N] or [Source N: Title]
                   .replace(
                     /\[Source\s+(\d+)(?:[:\s]+([^\]]+))?\]/gi,
                     (match, num, title) => {
@@ -634,15 +755,18 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
                       return `[${prefix} ${linkTitle}](/citation-${sourceNum})`;
                     }
                   );
-                
+
                 return (
-                  <ReactMarkdown 
+                  <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      a: ({node, href, children}) => {
+                      a: ({ node, href, children, ...props }) => {
                         // Check if this is a citation link
                         const citationMatch = href?.match(/\/citation-(\d+)/);
+                        const isNewCitation = href?.startsWith('/citation-new');
+
                         if (citationMatch) {
+                          // Old format: /citation-N
                           const sourceNum = parseInt(citationMatch[1]);
                           const tabInfo = tabMetadata[sourceNum - 1];
                           return (
@@ -660,6 +784,34 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
                             </button>
                           );
                         }
+
+                        if (isNewCitation) {
+                          // New format: /citation-new?title=...&quote=...
+                          try {
+                            const url = new URL(href, 'http://dummy.com'); // Base needed for relative URLs
+                            const title = url.searchParams.get('title');
+                            const quote = url.searchParams.get('quote');
+
+                            return (
+                              <button
+                                className={citationLinkClass}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleCitationClick(title, quote);
+                                }}
+                                title={title}
+                                aria-label={title}
+                              >
+                                <span className="citation-index">{children}</span>
+                              </button>
+                            );
+                          } catch (e) {
+                            console.error('Failed to parse citation URL:', href);
+                            return <span>{children}</span>;
+                          }
+                        }
+
                         return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
                       }
                     }}
@@ -722,7 +874,7 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
             Thinking...
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -733,15 +885,33 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
       )}
 
       <form ref={inputFormRef} className={inputFormClass} onSubmit={handleSendMessage}>
-        <input 
-          value={input} 
-          onChange={e => setInput(e.target.value)} 
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder={status === 'error' && !context ? "Refresh tab to try again" : "Ask a question..."}
           disabled={status === 'thinking' || status === 'extracting'}
+          rows={1}
           autoFocus
         />
-        <button type="submit" disabled={status === 'thinking' || status === 'extracting' || !input.trim()}>
-          Send
+        <button
+          type="button"
+          className="stop-btn"
+          onClick={handleStopGeneration}
+          disabled={status !== 'thinking'}
+          title="Stop generation"
+          style={{ display: status === 'thinking' ? 'flex' : 'none' }}
+        >
+          <IconStop className="chat-icon" />
+        </button>
+        <button
+          type="submit"
+          disabled={status === 'thinking' || status === 'extracting' || !input.trim()}
+          title="Send message"
+          style={{ display: status === 'thinking' ? 'none' : 'flex' }}
+        >
+          <IconSend className="chat-icon" />
         </button>
       </form>
     </div>

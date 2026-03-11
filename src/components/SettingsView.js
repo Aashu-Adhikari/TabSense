@@ -39,7 +39,7 @@ export const COMPONENT_FILTERS = {
   ALL: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING, SETTING_COMPONENTS.UI_PREFERENCES],
   CHAT: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY, SETTING_COMPONENTS.UI_PREFERENCES], // LLM API and chat history settings for chat interface
   HEADER: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING, SETTING_COMPONENTS.UI_PREFERENCES], // Same as ALL for now
-  SIDEBAR: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.CHAT_HISTORY, SETTING_COMPONENTS.UI_PREFERENCES], // Sidebar-specific settings
+  SIDEBAR: [SETTING_COMPONENTS.LLM_API, SETTING_COMPONENTS.AUTO_GROUPING, SETTING_COMPONENTS.CHAT_HISTORY, SETTING_COMPONENTS.UI_PREFERENCES], // Sidebar-specific settings
 };
 
 const SettingsView = ({
@@ -58,6 +58,7 @@ const SettingsView = ({
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [defaultView, setDefaultView] = useState('sidepanel');
+  const [uiSize, setUiSize] = useState('normal');
 
   // Auto-grouping settings
   const [autoGroupingEnabled, setAutoGroupingEnabled] = useState(true);
@@ -71,6 +72,7 @@ const SettingsView = ({
   const showAutoGrouping = enabledComponents.includes(SETTING_COMPONENTS.AUTO_GROUPING);
   const showChatHistory = enabledComponents.includes(SETTING_COMPONENTS.CHAT_HISTORY);
   const showUiPreferences = enabledComponents.includes(SETTING_COMPONENTS.UI_PREFERENCES);
+  const showUiSizeOption = compact;
 
   // Load existing settings if editing
   useEffect(() => {
@@ -107,6 +109,7 @@ const SettingsView = ({
         chrome.storage.local.get(['ui_preferences']).then(result => {
           const settings = result.ui_preferences || {};
           setDefaultView(settings.defaultView || 'sidepanel');
+          setUiSize(settings.uiSize || 'normal');
         });
       }
     }
@@ -148,7 +151,8 @@ const SettingsView = ({
 
     if (showUiPreferences) {
       const uiPreferences = {
-        defaultView
+        defaultView,
+        uiSize
       };
       await chrome.storage.local.set({ ui_preferences: uiPreferences });
       try {
@@ -318,6 +322,24 @@ const SettingsView = ({
               This controls whether the extension button opens the side panel or the popup.
             </p>
           </div>
+
+          {showUiSizeOption && (
+            <div className="form-group">
+              <label>Interface size</label>
+              <select
+                value={uiSize}
+                onChange={(e) => setUiSize(e.target.value)}
+                className="settings-select"
+              >
+                <option value="small">Small</option>
+                <option value="normal">Normal</option>
+                <option value="big">Big</option>
+              </select>
+              <p className="settings-hint">
+                Adjust the overall size of text, buttons, and spacing in the side panel.
+              </p>
+            </div>
+          )}
         </>
       )}
 

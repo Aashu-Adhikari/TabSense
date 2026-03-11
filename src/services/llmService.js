@@ -18,10 +18,10 @@ class LLMService {
     return apiKey && apiKey.length > 5;
   }
 
-  async chat(messages, context) {
+  async chat(messages, context, signal = null) {
     // FIX: Use getConfig() instead of getApiKey()
     const config = await this.getConfig();
-    
+
     if (!config.apiKey) {
       throw new Error('API Key is missing. Please configure it in settings.');
     }
@@ -36,8 +36,9 @@ class LLMService {
       Answer the user's questions based primarily on the provided webpage context.
       
       CITATION RULES:
-      ${includeCitations ? '- When referencing specific information, cite the source using the format: [Source N]' : '- Do not include citations'}
-      ${includeCitations ? '- Where N is the source number (1, 2, 3...) corresponding to the numbered sources below' : ''}
+      ${includeCitations ? '- When referencing specific information, cite the source using the format: [[Source: Page Title | "exact text snippet"]]' : '- Do not include citations'}
+      ${includeCitations ? '- You MUST include a short, unique quote (5-10 words) from the text to help locate the information' : ''}
+      ${includeCitations ? '- The quote should be in double quotes and be an exact match from the source' : ''}
       ${includeCitations ? '- Only cite when referencing specific facts from the context' : ''}
       ${includeCitations ? '- If information comes from a specific source, cite it immediately after the claim' : ''}
       
@@ -55,7 +56,7 @@ class LLMService {
       model: config.model,
       messages: [systemPrompt, ...messages],
       temperature: 0.7,
-      max_tokens: 10000,
+      max_tokens: 20000,
       stream: true, // Enable streaming
       provider: { ignore: ["False"] }
     };
@@ -69,7 +70,8 @@ class LLMService {
           'HTTP-Referer': 'https://github.com/TabSynth/extension',
           'X-Title': 'TabSynth Extension'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal // Pass the AbortSignal here
       });
 
       if (!response.ok) {

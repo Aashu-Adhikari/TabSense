@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import './sidebar-base.css';
 import '../styles/components/search.css';
 import '../styles/components/groups.css';
+import '../styles/components/toast.css';
 import './sidebar-chat.css';
 import { useGroups } from '../hooks/useGroups';
 import { useSearch } from '../hooks/useSearch';
@@ -11,6 +12,7 @@ import SearchResultsView from '../components/SearchResultsView';
 import Button from '../components/common/Button';
 import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView';
+import UndoToast from '../components/common/UndoToast';
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView';
 import { mlCategories } from '../utils/mlCategories';
 import { openPatreon } from '../utils/links';
@@ -21,7 +23,9 @@ import {
   IconHeart,
   IconRefresh,
   IconSettings,
-  IconSort
+  IconSort,
+  IconSidebar,
+  IconExternal
 } from '../components/common/Icons';
 
 function SidebarApp() {
@@ -33,6 +37,9 @@ function SidebarApp() {
     fetchGroupsAndTabs,
     handleUngroupSingleTab,
     handleUngroupAll,
+    handleDeleteGroup,
+    handleUndoDelete,
+    undoState,
     handleRenameGroup,
     handleAddToGroup,
     handleOpenTab,
@@ -71,6 +78,8 @@ function SidebarApp() {
   const [activeView, setActiveView] = useState('explorer'); // 'explorer', 'chat', 'settings'
   const [draggedGroupId, setDraggedGroupId] = useState(null);
   const [dragOverGroupId, setDragOverGroupId] = useState(null);
+  const [uiSize, setUiSize] = useState('normal');
+  const [defaultView, setDefaultView] = useState('sidepanel');
 
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -87,6 +96,27 @@ function SidebarApp() {
     };
     chrome.tabs.onActivated.addListener(handleActivated);
     return () => chrome.tabs.onActivated.removeListener(handleActivated);
+  }, []);
+
+  useEffect(() => {
+    const normalizeSize = (value) => (
+      value === 'small' || value === 'big' ? value : 'normal'
+    );
+
+    chrome.storage.local.get(['ui_preferences'], (result) => {
+      setUiSize(normalizeSize(result.ui_preferences?.uiSize));
+      setDefaultView(result.ui_preferences?.defaultView || 'sidepanel');
+    });
+
+    const handleStorageChange = (changes, areaName) => {
+      if (areaName !== 'local' || !changes.ui_preferences) return;
+      const { newValue } = changes.ui_preferences;
+      setUiSize(normalizeSize(newValue?.uiSize));
+      setDefaultView(newValue?.defaultView || 'sidepanel');
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange);
   }, []);
 
   // Switch to chat view if a chat is activated
@@ -280,6 +310,27 @@ function SidebarApp() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchTerm, clearSearch]);
 
+  const toggleDefaultView = async () => {
+    const newView = defaultView === 'sidepanel' ? 'popup' : 'sidepanel';
+
+    chrome.storage.local.get(['ui_preferences'], async (result) => {
+      const prefs = result.ui_preferences || {};
+      prefs.defaultView = newView;
+      await chrome.storage.local.set({ ui_preferences: prefs });
+
+      try {
+        await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: newView === 'sidepanel' });
+
+        if (newView === 'popup') {
+          // Open popup immediately
+          chrome.action.openPopup();
+        }
+      } catch (e) {
+        console.warn('Failed to update panel behavior:', e);
+      }
+    });
+  };
+
   const loading = groupsLoading;
 
   // --- RENDER HELPERS ---
@@ -354,6 +405,17 @@ function SidebarApp() {
             </div>
           </div>
           <div className="sidebar-header-actions">
+            <button
+              className="sidebar-action-btn"
+              onClick={toggleDefaultView}
+              title={defaultView === 'sidepanel' ? 'Switch to Popup Mode' : 'Switch to Sidebar Mode'}
+            >
+              {defaultView === 'sidepanel' ? (
+                <IconSidebar className="sidebar-icon sidebar-icon--small" />
+              ) : (
+                <IconExternal className="sidebar-icon sidebar-icon--small" />
+              )}
+            </button>
             <button className="sidebar-action-btn" onClick={fetchGroupsAndTabs} title="Refresh">
               <IconRefresh className="sidebar-icon sidebar-icon--small" />
             </button>
@@ -482,6 +544,7 @@ function SidebarApp() {
                           onToggle={toggleGroup}
                           onUngroupSingleTab={handleUngroupSingleTab}
                           onUngroupAll={handleUngroupAll}
+                          onDeleteGroup={handleDeleteGroup}
                           onStartRename={handleStartRename}
                           onOpenTab={handleOpenTab}
                           onChatWithGroup={(targetGroup) => {
@@ -626,13 +689,20 @@ function SidebarApp() {
   );
 
   return (
-    <div className="sidebar-container">
+    <div className={`sidebar-container sidebar-size-${uiSize}`}>
       {renderActivityBar()}
       <div className="sidebar-content">
         {activeView === 'explorer' && renderExplorerView()}
         {activeView === 'chat' && renderChatView()}
         {activeView === 'settings' && renderSettingsView()}
       </div>
+
+      {undoState && (
+        <UndoToast
+          expiresAt={undoState.expiresAt}
+          onUndo={handleUndoDelete}
+        />
+      )}
     </div>
   );
 }

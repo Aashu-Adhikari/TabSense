@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import './base.css';
 import '../styles/components/search.css';
 import '../styles/components/groups.css';
+import '../styles/components/toast.css';
 import './action-grid.css';
 import { useGroups } from '../hooks/useGroups';
 import { useSearch } from '../hooks/useSearch';
@@ -12,9 +13,19 @@ import SearchResultsView from '../components/SearchResultsView';
 import Button from '../components/common/Button';
 import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView'; // <-- NEW IMPORT
+import UndoToast from '../components/common/UndoToast';
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView'; // <-- NEW IMPORT
 import { mlCategories } from '../utils/mlCategories';
-import { IconChat, IconChevrons, IconHeart, IconRefresh, IconSettings, IconSort } from '../components/common/Icons';
+import {
+  IconChat,
+  IconChevrons,
+  IconHeart,
+  IconRefresh,
+  IconSettings,
+  IconSort,
+  IconSidebar,
+  IconExternal
+} from '../components/common/Icons';
 import { openPatreon } from '../utils/links';
 
 function App() {
@@ -26,6 +37,9 @@ function App() {
     fetchGroupsAndTabs,
     handleUngroupSingleTab,
     handleUngroupAll,
+    handleDeleteGroup,
+    handleUndoDelete,
+    undoState,
     handleRenameGroup,
     handleAddToGroup,
     handleOpenTab,
@@ -64,10 +78,16 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [draggedGroupId, setDraggedGroupId] = useState(null);
   const [dragOverGroupId, setDragOverGroupId] = useState(null);
+  const [defaultView, setDefaultView] = useState('popup');
 
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs.length > 0) setCurrentTab(tabs[0]);
+    });
+
+    // Load default view preference
+    chrome.storage.local.get(['ui_preferences'], (result) => {
+      setDefaultView(result.ui_preferences?.defaultView || 'sidepanel');
     });
   }, []);
 
@@ -259,6 +279,33 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchTerm, clearSearch]);
 
+  const toggleDefaultView = async () => {
+    const newView = defaultView === 'sidepanel' ? 'popup' : 'sidepanel';
+
+    chrome.storage.local.get(['ui_preferences'], async (result) => {
+      const prefs = result.ui_preferences || {};
+      prefs.defaultView = newView;
+      await chrome.storage.local.set({ ui_preferences: prefs });
+
+      try {
+        await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: newView === 'sidepanel' });
+
+        if (newView === 'sidepanel') {
+          // Open sidebar and close popup
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs.length > 0) {
+              chrome.sidePanel.open({ windowId: tabs[0].windowId });
+              window.close();
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to update panel behavior:', e);
+      }
+      setDefaultView(newView);
+    });
+  };
+
   const loading = groupsLoading;
 
   // View Switching Logic
@@ -313,6 +360,17 @@ function App() {
           </div>
         </div>
         <div className="header-actions">
+          <button
+            className="header-icon-btn"
+            onClick={toggleDefaultView}
+            title={defaultView === 'sidepanel' ? 'Switch to Popup Mode' : 'Switch to Sidebar Mode'}
+          >
+            {defaultView === 'sidepanel' ? (
+              <IconSidebar className="popup-icon" />
+            ) : (
+              <IconExternal className="popup-icon" />
+            )}
+          </button>
           <button
             className="header-icon-btn"
             onClick={fetchGroupsAndTabs}
@@ -469,31 +527,32 @@ function App() {
             <div className="groups-list">
               {groups.length > 0 ? (
                 groups.map(group => (
-                    <GroupCard
-                      key={group.id}
-                      group={group}
-                      expanded={expandedGroups.has(group.id)}
-                      onToggle={toggleGroup}
-                      onUngroupSingleTab={handleUngroupSingleTab}
-                      onUngroupAll={handleUngroupAll}
-                      onStartRename={handleStartRename}
-                      onOpenTab={handleOpenTab}
-                      onChatWithGroup={setActiveChatGroup}
-                      domainSettings={domainSettings}
-                      onSaveDomainSetting={handleSaveDomainSetting}
-                      onRename={handleRenameGroup}
-                      showChatShortcut
-                      chatShortcutIcon={<IconChat />}
-                      draggable
-                      onDragStart={handleGroupDragStart(group)}
-                      onDragOver={handleGroupDragOver(group)}
-                      onDrop={handleGroupDrop(group)}
-                      onDragEnd={handleGroupDragEnd}
-                      extraClassName={[
-                        draggedGroupId === group.id ? 'group-card--dragging' : '',
-                        dragOverGroupId === group.id ? 'group-card--drag-over' : ''
-                      ].join(' ').trim()}
-                    />
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    expanded={expandedGroups.has(group.id)}
+                    onToggle={toggleGroup}
+                    onUngroupSingleTab={handleUngroupSingleTab}
+                    onUngroupAll={handleUngroupAll}
+                    onDeleteGroup={handleDeleteGroup}
+                    onStartRename={handleStartRename}
+                    onOpenTab={handleOpenTab}
+                    onChatWithGroup={setActiveChatGroup}
+                    domainSettings={domainSettings}
+                    onSaveDomainSetting={handleSaveDomainSetting}
+                    onRename={handleRenameGroup}
+                    showChatShortcut
+                    chatShortcutIcon={<IconChat />}
+                    draggable
+                    onDragStart={handleGroupDragStart(group)}
+                    onDragOver={handleGroupDragOver(group)}
+                    onDrop={handleGroupDrop(group)}
+                    onDragEnd={handleGroupDragEnd}
+                    extraClassName={[
+                      draggedGroupId === group.id ? 'group-card--dragging' : '',
+                      dragOverGroupId === group.id ? 'group-card--drag-over' : ''
+                    ].join(' ').trim()}
+                  />
                 ))
               ) : (
                 <div className="empty-section">No groups yet.</div>
@@ -554,6 +613,12 @@ function App() {
         )}
       </main>
 
+      {undoState && (
+        <UndoToast
+          expiresAt={undoState.expiresAt}
+          onUndo={handleUndoDelete}
+        />
+      )}
     </div>
   );
 }

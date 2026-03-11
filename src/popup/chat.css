@@ -5,7 +5,7 @@
 .chat-view-container {
   display: flex;
   flex-direction: column;
-  width: 420px; 
+  width: 420px;
   height: 580px;
   background: #f8fafc;
   box-sizing: border-box;
@@ -45,6 +45,7 @@
   display: flex;
   align-items: center;
 }
+
 .back-btn:hover {
   color: #3b82f6;
 }
@@ -73,6 +74,7 @@
 .chat-messages::-webkit-scrollbar {
   width: 6px;
 }
+
 .chat-messages::-webkit-scrollbar-thumb {
   background-color: #cbd5e1;
   border-radius: 3px;
@@ -85,7 +87,7 @@
   font-size: 0.9rem;
   line-height: 1.4;
   word-wrap: break-word;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .chat-bubble.user {
@@ -114,32 +116,69 @@
   box-sizing: border-box;
 }
 
-.chat-input-form input {
+.chat-input-form input,
+.chat-input-form textarea {
   flex: 1;
   padding: 0.6rem 1rem;
   border: 1px solid #cbd5e1;
-  border-radius: 2rem;
+  border-radius: 1.2rem;
   outline: none;
   font-size: 0.9rem;
   min-width: 0;
+  font-family: inherit;
+  resize: none;
+  line-height: 1.4;
+  overflow-y: hidden;
+  max-height: 120px;
 }
 
-.chat-input-form input:focus {
+.chat-input-form input:focus,
+.chat-input-form textarea:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
-.chat-input-form button {
+.chat-input-form button,
+.chat-input-form .stop-btn {
   background: #3b82f6;
   color: white;
   border: none;
-  border-radius: 2rem;
-  padding: 0 1.25rem;
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
   cursor: pointer;
   font-weight: 600;
   font-size: 0.9rem;
-  transition: background 0.2s;
+  transition: all 0.2s;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-input-form .stop-btn {
+  background: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+
+.chat-input-form .stop-btn:hover {
+  background: #fecaca;
+  color: #dc2626;
+}
+
+.chat-input-form button .chat-icon,
+.chat-input-form .stop-btn .chat-icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+.chat-input-form .stop-btn .chat-icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
 }
 
 .chat-input-form button:hover:not(:disabled) {
@@ -202,11 +241,13 @@
 .chat-bubble p {
   margin: 0 0 0.5rem 0;
 }
+
 .chat-bubble p:last-child {
   margin-bottom: 0;
 }
 
-.chat-bubble ul, .chat-bubble ol {
+.chat-bubble ul,
+.chat-bubble ol {
   margin: 0.5rem 0;
   padding-left: 1.5rem;
 }
@@ -221,7 +262,7 @@
 
 .chat-bubble code {
   font-family: monospace;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
   padding: 0.1rem 0.3rem;
   border-radius: 0.2rem;
   font-size: 0.85em;
@@ -246,6 +287,7 @@
   color: #e0f2fe;
   text-decoration: underline;
 }
+
 .chat-bubble.assistant a {
   color: #2563eb;
 }
@@ -357,7 +399,10 @@
 }
 
 /* Copy, Clear and Export Buttons */
-.copy-message-btn, .regenerate-btn, .clear-chat-btn, .export-chat-btn {
+.copy-message-btn,
+.regenerate-btn,
+.clear-chat-btn,
+.export-chat-btn {
   background: none;
   border: none;
   font-size: 0.8rem;
@@ -368,7 +413,10 @@
   transition: all 0.2s;
 }
 
-.copy-message-btn:hover, .regenerate-btn:hover:not(:disabled), .clear-chat-btn:hover, .export-chat-btn:hover {
+.copy-message-btn:hover,
+.regenerate-btn:hover:not(:disabled),
+.clear-chat-btn:hover,
+.export-chat-btn:hover {
   color: #3b82f6;
   background: #f1f5f9;
 }
@@ -423,7 +471,8 @@
   margin-bottom: 0;
 }
 
-.markdown-content ul, .markdown-content ol {
+.markdown-content ul,
+.markdown-content ol {
   margin: 0.5rem 0;
   padding-left: 1.5rem;
 }
@@ -472,7 +521,8 @@
     border-color: #252a2f;
   }
 
-  .chat-input-form input {
+  .chat-input-form input,
+  .chat-input-form textarea {
     background: #0f1012;
     color: #e5e7eb;
     border-color: #2a3138;
@@ -487,30 +537,30 @@
     background: #14161a;
     border-color: #252a2f;
   }
-  
+
   .chip-button {
     background: #1b1f24;
     border-color: #2a3138;
     color: #e5e7eb;
   }
-  
+
   .chip-button:hover:not(:disabled) {
     background: #2a3138;
     border-color: #3a424b;
     color: #f8fafc;
   }
-  
+
   .citation-link {
     background: #1b1f24;
     color: #cbd5e1;
     border-color: #2a3138;
   }
-  
+
   .citation-link:hover {
     background: #2a3138;
     color: #e5e7eb;
   }
-  
+
   .citation-hidden {
     color: #9aa4b2;
   }

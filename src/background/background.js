@@ -432,6 +432,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return groupHandlers.handleFindOrCreateGroupAndAddTab(request, sendResponse);
   }
 
+  if (request.action === "DELETE_GROUP") {
+    return groupHandlers.handleDeleteGroup(request, sendResponse);
+  }
+
+  if (request.action === "UNDO_DELETE_GROUP") {
+    return groupHandlers.handleUndoDeleteGroup(request, sendResponse);
+  }
+
   // --- Search Handlers ---
   if (request.action === "SEARCH_ALL_TABS") {
     return searchHandlers.handleSearchAllTabs(request, sendResponse);
@@ -478,6 +486,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "SWITCH_TO_TAB") {
     return chatHandlers.handleSwitchToTab(request, sendResponse);
+  }
+
+  if (request.action === "ACTIVATE_TAB") {
+    return chatHandlers.handleActivateTab(request, sendResponse);
   }
 
   if (request.action === "SAVE_LLM_CONFIG") {

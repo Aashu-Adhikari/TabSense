@@ -17,10 +17,10 @@ export async function handleFindOrCreateGroupAndAddTab(request, sendResponse) {
 
     const allGroups = await new Promise(resolve => chrome.tabGroups.query({ windowId }, resolve));
     const targetTitle = groupTitle || `${categoryEmoji} ${categoryName}`;
-    
+
     console.log('Finding or creating group for title:', targetTitle, 'in window:', windowId);
     console.log('Existing groups in window:', allGroups.map(g => g.title));
-    
+
     let targetGroup = allGroups.find(group => group.title === targetTitle);
 
     if (targetGroup) {
@@ -223,5 +223,91 @@ export function handleMoveGroup(request, sendResponse) {
       sendResponse({ success: true });
     }
   });
+  return true;
+}
+export function handleDeleteGroup(request, sendResponse) {
+  const { groupId } = request;
+
+  (async () => {
+    try {
+      // 1. Get group metadata
+      const group = await new Promise((resolve, reject) => {
+        chrome.tabGroups.get(groupId, (res) => {
+          if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+          else resolve(res);
+        });
+      });
+
+      // 2. Get tabs in this group
+      const tabs = await new Promise(resolve => chrome.tabs.query({ groupId }, resolve));
+
+      // 3. Prepare metadata for undo
+      const groupData = {
+        title: group.title,
+        color: group.color,
+        tabs: tabs.map(t => ({
+          url: t.url,
+          title: t.title,
+          favIconUrl: t.favIconUrl,
+          pinned: t.pinned,
+          index: t.index
+        })),
+        windowId: group.windowId
+      };
+
+      // 4. Send response with metadata BEFORE closing tabs
+      sendResponse({ success: true, groupData });
+
+      // 5. Close the tabs (this will automatically delete the group)
+      const tabIds = tabs.map(t => t.id);
+      await new Promise(resolve => chrome.tabs.remove(tabIds, resolve));
+    } catch (error) {
+      console.error('Error in handleDeleteGroup:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+  })();
+
+  return true;
+}
+
+export function handleUndoDeleteGroup(request, sendResponse) {
+  const { groupData } = request;
+
+  (async () => {
+    try {
+      // 1. Re-open tabs
+      const createdTabs = [];
+      for (const tabInfo of groupData.tabs) {
+        const tab = await new Promise(resolve => {
+          chrome.tabs.create({
+            url: tabInfo.url,
+            windowId: groupData.windowId,
+            active: false,
+            pinned: tabInfo.pinned
+          }, resolve);
+        });
+        createdTabs.push(tab);
+      }
+
+      // 2. Re-group them
+      const tabIds = createdTabs.map(t => t.id);
+      const newGroupId = await new Promise(resolve => chrome.tabs.group({ tabIds }, resolve));
+
+      // 3. Update group properties
+      await new Promise(resolve => {
+        chrome.tabGroups.update(newGroupId, {
+          title: groupData.title,
+          color: groupData.color,
+          collapsed: true
+        }, resolve);
+      });
+
+      sendResponse({ success: true, groupId: newGroupId });
+    } catch (error) {
+      console.error('Error in handleUndoDeleteGroup:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+  })();
+
   return true;
 }

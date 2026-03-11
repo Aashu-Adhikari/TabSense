@@ -17,10 +17,10 @@ class ChromeApiService {
   // Group tabs
   async groupTabs(tabIds, groupName) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ 
-        action: "GROUP_TABS", 
-        tabIds, 
-        groupName 
+      chrome.runtime.sendMessage({
+        action: "GROUP_TABS",
+        tabIds,
+        groupName
       }, resolve);
     });
   }
@@ -56,9 +56,9 @@ class ChromeApiService {
   // Ungroup single tab
   async ungroupSingleTab(tabId) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ 
-        action: "UNGROUP_SINGLE_TAB", 
-        tabId 
+      chrome.runtime.sendMessage({
+        action: "UNGROUP_SINGLE_TAB",
+        tabId
       }, resolve);
     });
   }
@@ -66,9 +66,9 @@ class ChromeApiService {
   // Ungroup all tabs
   async ungroupAllTabs(groupId) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ 
-        action: "UNGROUP_ALL_TABS", 
-        groupId 
+      chrome.runtime.sendMessage({
+        action: "UNGROUP_ALL_TABS",
+        groupId
       }, resolve);
     });
   }
@@ -76,10 +76,10 @@ class ChromeApiService {
   // Add tab to group
   async addTabToGroup(tabId, groupId) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ 
-        action: "ADD_TAB_TO_GROUP", 
-        tabId, 
-        groupId 
+      chrome.runtime.sendMessage({
+        action: "ADD_TAB_TO_GROUP",
+        tabId,
+        groupId
       }, resolve);
     });
   }
@@ -87,10 +87,10 @@ class ChromeApiService {
   // Rename group
   async renameGroup(groupId, newName) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ 
-        action: "RENAME_GROUP", 
-        groupId, 
-        newName 
+      chrome.runtime.sendMessage({
+        action: "RENAME_GROUP",
+        groupId,
+        newName
       }, resolve);
     });
   }
@@ -107,17 +107,37 @@ class ChromeApiService {
     });
   }
 
-  // Search all tabs
-  async searchAllTabs(searchTerm) {
+  // Delete group (close tabs)
+  async deleteGroup(groupId) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ 
-        action: "SEARCH_ALL_TABS", 
-        searchTerm 
+      chrome.runtime.sendMessage({
+        action: "DELETE_GROUP",
+        groupId
       }, resolve);
     });
   }
 
-    async findOrCreateGroupAndAddTab(tabId, categoryName, categoryEmoji) {
+  // Undo delete group
+  async undoDeleteGroup(groupData) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        action: "UNDO_DELETE_GROUP",
+        groupData
+      }, resolve);
+    });
+  }
+
+  // Search all tabs
+  async searchAllTabs(searchTerm) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        action: "SEARCH_ALL_TABS",
+        searchTerm
+      }, resolve);
+    });
+  }
+
+  async findOrCreateGroupAndAddTab(tabId, categoryName, categoryEmoji) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({
         action: "FIND_OR_CREATE_GROUP_AND_ADD_TAB",
@@ -146,28 +166,28 @@ class ChromeApiService {
 
   async classifyTab(title, url) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ 
-        action: "CLASSIFY_TAB", 
-        title, 
-        url 
+      chrome.runtime.sendMessage({
+        action: "CLASSIFY_TAB",
+        title,
+        url
       }, resolve);
     });
   }
 
   async getSmartGroupName(tabs) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ 
-        action: "GET_SMART_GROUP_NAME", 
-        tabs 
+      chrome.runtime.sendMessage({
+        action: "GET_SMART_GROUP_NAME",
+        tabs
       }, resolve);
     });
   }
 
   async trainModel(trainingData) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ 
-        action: "TRAIN_MODEL", 
-        trainingData 
+      chrome.runtime.sendMessage({
+        action: "TRAIN_MODEL",
+        trainingData
       }, resolve);
     });
   }
@@ -206,7 +226,7 @@ class ChromeApiService {
     });
   }
 
-    connectChatStream(messages, context, callbacks) {
+  connectChatStream(messages, context, callbacks) {
     const { onChunk, onEnd, onError } = callbacks;
     const port = chrome.runtime.connect({ name: 'chat_stream' });
 
@@ -253,6 +273,12 @@ class ChromeApiService {
   async switchToTab(tabId) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({ action: "SWITCH_TO_TAB", tabId }, resolve);
+    });
+  }
+
+  async activateTab(tabId, quote = null) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "ACTIVATE_TAB", tabId, quote }, resolve);
     });
   }
 

@@ -14,6 +14,7 @@ const GroupCard = ({
   domainSettings = {},
   onSaveDomainSetting,
   onRename,
+  onDeleteGroup,
   showChatShortcut = false,
   compactLabels = false,
   chatShortcutIcon = null,
@@ -287,8 +288,17 @@ const GroupCard = ({
             <button
               className="group-action-btn ungroup-btn"
               onClick={() => onUngroupAll(group.id)}
+              title="Keep tabs open but remove group"
             >
               {ungroupLabel}
+            </button>
+            <button
+              className="group-action-btn delete-btn"
+              onClick={() => onDeleteGroup(group.id)}
+              title="Close all tabs and delete group"
+              style={{ color: '#ef4444' }}
+            >
+              {compactLabels ? 'Delete' : '🗑️ Delete Group'}
             </button>
           </div>
         </div>

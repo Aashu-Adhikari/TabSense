@@ -5,7 +5,7 @@
 .settings-container {
   display: flex;
   flex-direction: column;
-  width: 420px; 
+  width: 420px;
   max-height: 580px;
   background: #f8fafc;
   box-sizing: border-box;
@@ -96,7 +96,8 @@
   color: #475569;
 }
 
-.settings-input, .settings-select {
+.settings-input,
+.settings-select {
   width: 100%;
   padding: 0.6rem;
   border: 1px solid #cbd5e1;
@@ -126,6 +127,8 @@
   display: flex;
   gap: 0.5rem;
   margin-top: 1.5rem;
+  padding-bottom: 2rem;
+  /* Ensure save button isn't cut off by bezel */
 }
 
 .settings-btn {
