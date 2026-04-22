@@ -37,6 +37,7 @@
 | 🧠 **Adaptive Learning** | Model learns from user assignments to improve accuracy |
 | 💬 **Chat with Tabs** | LLM integration for querying webpage content with citations |
 | 🔄 **Undo/Redo** | 60-second window to undo/redo group deletions |
+| 📊 **Advanced Analytics** | Track active time, memory usage, focus scores, and clear stale tabs |
 | ⚡ **Dual UI** | Both popup and side panel interfaces |
 
 ### Technology Stack
@@ -275,6 +276,18 @@ Users can customize how domains appear:
   'youtube.com': { emoji: '🎬', name: 'YouTube' }
 }
 ```
+
+### 6. Advanced Analytics Dashboard
+
+**Recently implemented feature** (v1.1.1):
+
+Comprehensive tracking and optimization metrics accessed via the pie-chart icon in the Popup/Sidebar, or as a standalone enlarged view.
+
+- **Time Tracking:** Background Service Worker tracks active focus time per tab and domain.
+- **Estimated Memory Usage:** Intelligent heuristic estimates RAM footprint based on site category (e.g. Video ≈ 150MB, Standard ≈ 50MB).
+- **Daily Focus Score:** 0-100 score classifying browsing time into "Productive" vs "Distracting" buckets using a customizable domain blocklist.
+- **The Graveyard:** Automatically flags "Stale Tabs" that have been dormant for >24 hours and provides a 1-click "Clear All" utility.
+- **Historical Trends:** Persistent storage logs daily active time and visualizes the past 7 days using a custom CSS BarChart.
 
 ---
 

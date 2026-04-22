@@ -41,6 +41,14 @@ An intelligent Chrome extension that uses AI to automatically organize and manag
 - Redo to re-delete restored groups
 - Header toolbar buttons for quick access
 
+### 📊 Advanced Analytics Dashboard
+- **Time Tracking:** Track active browsing time per domain and tab
+- **Memory Estimation:** Heuristic tracking of browser RAM consumption
+- **Focus Score:** Intelligent classification of productive vs. distracting time
+- **The Graveyard:** Identify and clear stale tabs older than 24 hours
+- **Historical Trends:** Visualize your browsing habits over a 7-day period
+- **Multi-View:** Available in Popup, Sidebar, and a dedicated Full-Page view
+
 ### 🎨 Dual Interface
 - **Popup:** Quick access from toolbar
 - **Side Panel:** Full-featured panel view
