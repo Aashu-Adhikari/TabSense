@@ -1,0 +1,57 @@
+/* src/styles/components/barchart.css */
+
+.barchart-container {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  padding-top: 16px;
+}
+
+.barchart-bars {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.barchart-bar-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  position: relative;
+}
+
+.barchart-bar {
+  width: 100%;
+  max-width: 30px;
+  background-color: var(--accent-color, #3b82f6);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+  min-height: 2px;
+}
+
+.barchart-bar-wrapper:hover .barchart-bar {
+  background-color: var(--accent-hover, #2563eb);
+}
+
+.barchart-label {
+  font-size: 10px;
+  color: var(--text-secondary, #666);
+  margin-top: 4px;
+  text-align: center;
+}
+
+.barchart-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, #666);
+  font-size: 12px;
+}

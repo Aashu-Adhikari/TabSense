@@ -12,6 +12,7 @@ import Button from '../components/common/Button';
 import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView';
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView';
+import AnalyticsView from '../components/AnalyticsView';
 import { mlCategories } from '../utils/mlCategories';
 import { openPatreon } from '../utils/links';
 import {
@@ -25,7 +26,8 @@ import {
   IconSidebar,
   IconExternal,
   IconUndo,
-  IconRedo
+  IconRedo,
+  IconPieChart
 } from '../components/common/Icons';
 
 function SidebarApp() {
@@ -355,6 +357,15 @@ function SidebarApp() {
       >
         <div className="activity-bar-icon">
           <IconChat className="sidebar-icon" />
+        </div>
+      </div>
+      <div
+        className={`activity-bar-item ${activeView === 'analytics' ? 'active' : ''}`}
+        onClick={() => setActiveView('analytics')}
+        title="Analytics"
+      >
+        <div className="activity-bar-icon">
+          <IconPieChart className="sidebar-icon" />
         </div>
       </div>
       <div className="activity-bar-spacer" />
@@ -687,6 +698,12 @@ function SidebarApp() {
     );
   };
 
+  const renderAnalyticsView = () => (
+    <div className="sidebar-main" style={{ overflow: 'hidden' }}>
+      <AnalyticsView groups={groups} ungroupedTabs={ungroupedTabs} isPopup={false} onRefreshTabs={fetchGroupsAndTabs} />
+    </div>
+  );
+
   const renderSettingsView = () => (
     <>
       <div className="sidebar-header">
@@ -714,6 +731,7 @@ function SidebarApp() {
       <div className="sidebar-content">
         {activeView === 'explorer' && renderExplorerView()}
         {activeView === 'chat' && renderChatView()}
+        {activeView === 'analytics' && renderAnalyticsView()}
         {activeView === 'settings' && renderSettingsView()}
       </div>
     </div>

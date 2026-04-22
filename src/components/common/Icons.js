@@ -146,3 +146,16 @@ export const IconRedo = ({ className }) => (
     <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" />
   </Icon>
 );
+
+export const IconPieChart = ({ className }) => (
+  <Icon className={className}>
+    <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+    <path d="M22 12A10 10 0 0 0 12 2v10z" />
+  </Icon>
+);
+
+export const IconMaximize = ({ className }) => (
+  <Icon className={className}>
+    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+  </Icon>
+);

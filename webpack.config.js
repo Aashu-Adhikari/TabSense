@@ -12,8 +12,8 @@ module.exports = (env, argv) => {
       popup: './src/popup/index.js',
       sidepanel: './src/sidebar/sidepanel.js',
       background: './src/background/background.js',
-      content: './src/content/content.js'
-      // ❌ DELETE THIS LINE IF IT EXISTS: scraper: './src/content/scraper.js'
+      content: './src/content/content.js',
+      analytics: './src/analytics/index.js'
     },
     output: {
       path: path.resolve(__dirname, 'build'),
@@ -54,6 +54,12 @@ module.exports = (env, argv) => {
         template: './src/sidebar/sidepanel.html',
         filename: 'sidepanel.html',
         chunks: ['sidepanel'],
+        inject: 'body'
+      }),
+      new HtmlWebpackPlugin({
+        template: './src/analytics/analytics.html',
+        filename: 'analytics.html',
+        chunks: ['analytics'],
         inject: 'body'
       }),
       new CopyWebpackPlugin({

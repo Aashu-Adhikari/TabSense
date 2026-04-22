@@ -8,7 +8,8 @@ export function handleGetAllTabs(request, sendResponse) {
       url: tab.url,
       favIconUrl: tab.favIconUrl,
       windowId: tab.windowId,
-      groupId: tab.groupId
+      groupId: tab.groupId,
+      lastAccessed: tab.lastAccessed
     }));
     sendResponse({ success: true, tabs: tabData });
   });
@@ -76,7 +77,8 @@ export function handleGetGroupsWithTabs(request, sendResponse) {
             title: tab.title,
             url: tab.url,
             favIconUrl: tab.favIconUrl,
-            windowId: tab.windowId
+            windowId: tab.windowId,
+            lastAccessed: tab.lastAccessed
           });
           if (typeof tab.index === 'number') {
             const currentIndex = groupMap[tab.groupId].index;
@@ -102,7 +104,8 @@ export function handleGetGroupsWithTabs(request, sendResponse) {
         url: tab.url,
         favIconUrl: tab.favIconUrl,
         windowId: tab.windowId,
-        groupId: tab.groupId // Include for debugging
+        groupId: tab.groupId,
+        lastAccessed: tab.lastAccessed
       }));
       
       // Convert groupMap to array, filter out empty groups

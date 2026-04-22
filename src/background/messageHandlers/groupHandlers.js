@@ -59,45 +59,25 @@ export function handleGroupTabs(request, sendResponse) {
     return true;
   }
 
-  chrome.tabs.get(tabIds[0], (firstTab) => {
+  chrome.tabs.group({ tabIds: tabIds }, (groupId) => {
     if (chrome.runtime.lastError) {
-      sendResponse({ success: false, error: "Invalid tab IDs" });
+      sendResponse({
+        success: false,
+        error: `Grouping failed: ${chrome.runtime.lastError.message}`
+      });
       return;
     }
 
-    const windowId = firstTab.windowId;
-
-    chrome.tabs.query({ windowId: windowId }, (windowTabs) => {
-      const validTabIds = tabIds.filter(id =>
-        windowTabs.some(tab => tab.id === id)
-      );
-
-      if (validTabIds.length === 0) {
-        sendResponse({ success: false, error: "No valid tabs in the same window" });
-        return;
-      }
-
-      chrome.tabs.group({ tabIds: validTabIds }, (groupId) => {
-        if (chrome.runtime.lastError) {
-          sendResponse({
-            success: false,
-            error: `Grouping failed: ${chrome.runtime.lastError.message}`
-          });
-          return;
-        }
-
-        chrome.tabGroups.update(groupId, {
-          title: groupName,
-          color: "grey",
-          collapsed: true
-        }, () => {
-          sendResponse({
-            success: true,
-            groupId: groupId,
-            groupName: groupName,
-            tabCount: validTabIds.length
-          });
-        });
+    chrome.tabGroups.update(groupId, {
+      title: groupName,
+      color: "grey",
+      collapsed: true
+    }, () => {
+      sendResponse({
+        success: true,
+        groupId: groupId,
+        groupName: groupName,
+        tabCount: tabIds.length
       });
     });
   });

@@ -9,7 +9,9 @@ import * as groupHandlers from './messageHandlers/groupHandlers.js';
 import * as searchHandlers from './messageHandlers/searchHandlers.js';
 import * as mlHandlers from './messageHandlers/mlHandlers.js';
 import * as chatHandlers from './messageHandlers/chatHandlers.js';
+import * as analyticsHandlers from './messageHandlers/analyticsHandlers.js';
 import { emojiService } from '../services/emojiService.js';
+import { timeTracker } from './utils/timeTracker.js';
 
 // =================================================================
 // ===== PROACTIVE CACHING FOR INSTANT POPUP UI ====================
@@ -46,7 +48,8 @@ async function updateTabCache() {
             title: tab.title,
             url: tab.url,
             favIconUrl: tab.favIconUrl,
-            windowId: tab.windowId
+            windowId: tab.windowId,
+            lastAccessed: tab.lastAccessed
           });
           if (typeof tab.index === 'number') {
             const currentIndex = groupMap[tab.groupId].index;
@@ -65,7 +68,8 @@ async function updateTabCache() {
       url: tab.url,
       favIconUrl: tab.favIconUrl,
       windowId: tab.windowId,
-      groupId: tab.groupId
+      groupId: tab.groupId,
+      lastAccessed: tab.lastAccessed
     }));
 
     const groupList = Object.values(groupMap)
@@ -254,12 +258,14 @@ chrome.runtime.onStartup.addListener(async () => {
   await updateTabCache();
   await setTimersForInactiveUngroupedTabs();
   await purgeOldChatHistories();
+  await timeTracker.initialize();
 });
 chrome.runtime.onInstalled.addListener(async () => {
   await applyPanelBehaviorFromSettings();
   await updateTabCache();
   await setTimersForInactiveUngroupedTabs();
   await purgeOldChatHistories();
+  await timeTracker.initialize();
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -497,6 +503,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   if (request.action === "GET_LLM_CONFIG") {
     return chatHandlers.handleGetLLMConfig(request, sendResponse);
+  }
+
+  // --- Analytics Handlers ---
+  if (request.action === "GET_TIME_ANALYTICS") {
+    return analyticsHandlers.handleGetTimeAnalytics(request, sendResponse);
   }
 
   // --- Default Fallback ---

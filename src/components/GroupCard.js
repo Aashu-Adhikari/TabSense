@@ -30,6 +30,7 @@ const GroupCard = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [editingDomainName, setEditingDomainName] = useState(false);
   const [newDomainName, setNewDomainName] = useState('');
+  const [imageError, setImageError] = useState(false);
 
   const handleStartRename = () => {
     setRenamingGroup(group.id);
@@ -141,12 +142,13 @@ const GroupCard = ({
             style={{ cursor: isSingleDomain ? 'pointer' : 'default', position: 'relative', marginRight: '8px' }}
             title={isSingleDomain ? "Click to set custom emoji" : ""}
           >
-            {groupFavicon ? (
+            {groupFavicon && !imageError ? (
               <img
                 src={groupFavicon}
                 alt="Group Icon"
                 className="group-icon-favicon"
                 style={{ width: '14px', height: '14px', objectFit: 'contain' }}
+                onError={() => setImageError(true)}
               />
             ) : customEmoji && !compactLabels ? (
               <span className="group-custom-emoji" style={{ fontSize: '16px' }}>{customEmoji}</span>

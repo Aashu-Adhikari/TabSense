@@ -12,6 +12,7 @@ import Button from '../components/common/Button';
 import ChatView from '../components/ChatView';
 import CreateGroupView from '../components/CreateGroupView';
 import SettingsView, { COMPONENT_FILTERS } from '../components/SettingsView';
+import AnalyticsView from '../components/AnalyticsView';
 import { mlCategories } from '../utils/mlCategories';
 import {
   IconChat,
@@ -23,7 +24,8 @@ import {
   IconSidebar,
   IconExternal,
   IconUndo,
-  IconRedo
+  IconRedo,
+  IconPieChart
 } from '../components/common/Icons';
 import { openPatreon } from '../utils/links';
 
@@ -77,6 +79,7 @@ function App() {
 
   // ===== NEW STATE FOR SETTINGS =====
   const [showSettings, setShowSettings] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [draggedGroupId, setDraggedGroupId] = useState(null);
   const [dragOverGroupId, setDragOverGroupId] = useState(null);
   const [defaultView, setDefaultView] = useState('popup');
@@ -350,6 +353,22 @@ function App() {
     );
   }
 
+  // ===== NEW VIEW: Analytics =====
+  if (showAnalytics) {
+    return (
+      <div className="popup-container" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '8px', borderBottom: '1px solid #eaeaea' }}>
+          <Button variant="secondary" onClick={() => setShowAnalytics(false)}>
+            Back to Tabs
+          </Button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+          <AnalyticsView groups={groups} ungroupedTabs={ungroupedTabs} isPopup={true} onRefreshTabs={fetchGroupsAndTabs} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="popup-container">
       <header className="popup-header">
@@ -405,6 +424,14 @@ function App() {
             aria-label="Support"
           >
             <IconHeart className="popup-icon" />
+          </button>
+          <button
+            className="header-icon-btn"
+            onClick={() => setShowAnalytics(true)}
+            title="Analytics Dashboard"
+            aria-label="Analytics"
+          >
+            <IconPieChart className="popup-icon" />
           </button>
           <button
             className="header-icon-btn"

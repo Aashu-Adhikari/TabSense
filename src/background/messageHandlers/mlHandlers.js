@@ -260,37 +260,65 @@ export function handleMlAutoGroupAllTabs(request, sendResponse) {
                                 return;
                               }
 
-                              const remainingTabIds = remainingUngrouped.map(tab => tab.id);
-                              chrome.tabs.group({ tabIds: remainingTabIds }, (groupId) => {
-                                if (!chrome.runtime.lastError && groupId) {
-                                  chrome.tabGroups.update(groupId, {
-                                    title: 'Random Browsing',
-                                    color: getGroupColor('content'),
-                                    collapsed: true
-                                  }, () => {
-                                    createdGroups.push({
-                                      groupId,
-                                      name: 'Random Browsing',
-                                      tabCount: remainingTabIds.length
-                                    });
-
-                                    sendResponse({
-                                      success: true,
-                                      message: `Created ${createdGroups.length} AI-powered groups`,
-                                      groupsCreated: createdGroups.length,
-                                      totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
-                                      groups: createdGroups
-                                    });
-                                  });
-                                } else {
-                                  sendResponse({
-                                    success: true,
-                                    message: `Created ${createdGroups.length} AI-powered groups`,
-                                    groupsCreated: createdGroups.length,
-                                    totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
-                                    groups: createdGroups
-                                  });
+                              const remainingByWindow = {};
+                              remainingUngrouped.forEach(tab => {
+                                if (!remainingByWindow[tab.windowId]) {
+                                  remainingByWindow[tab.windowId] = [];
                                 }
+                                remainingByWindow[tab.windowId].push(tab.id);
+                              });
+
+                              const windowKeys = Object.keys(remainingByWindow);
+                              if (windowKeys.length === 0) {
+                                sendResponse({
+                                  success: true,
+                                  message: `Created ${createdGroups.length} AI-powered groups`,
+                                  groupsCreated: createdGroups.length,
+                                  totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
+                                  groups: createdGroups
+                                });
+                                return;
+                              }
+
+                              let windowsCompleted = 0;
+                              windowKeys.forEach(windowId => {
+                                const tabIds = remainingByWindow[windowId];
+                                chrome.tabs.group({ tabIds }, (groupId) => {
+                                  if (!chrome.runtime.lastError && groupId) {
+                                    chrome.tabGroups.update(groupId, {
+                                      title: 'Random Browsing',
+                                      color: getGroupColor('content'),
+                                      collapsed: true
+                                    }, () => {
+                                      createdGroups.push({
+                                        groupId,
+                                        name: 'Random Browsing',
+                                        tabCount: tabIds.length
+                                      });
+                                      windowsCompleted++;
+                                      if (windowsCompleted === windowKeys.length) {
+                                        sendResponse({
+                                          success: true,
+                                          message: `Created ${createdGroups.length} AI-powered groups`,
+                                          groupsCreated: createdGroups.length,
+                                          totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
+                                          groups: createdGroups
+                                        });
+                                      }
+                                    });
+                                  } else {
+                                    windowsCompleted++;
+                                    if (windowsCompleted === windowKeys.length) {
+                                      sendResponse({
+                                        success: true,
+                                        message: `Created ${createdGroups.length} AI-powered groups`,
+                                        groupsCreated: createdGroups.length,
+                                        totalTabsGrouped: createdGroups.reduce((sum, g) => sum + g.tabCount, 0),
+                                        groups: createdGroups
+                                      });
+                                    }
+                                  }
+                                });
                               });
                             });
                           });

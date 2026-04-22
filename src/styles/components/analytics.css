@@ -1,0 +1,188 @@
+/* src/styles/components/analytics.css */
+
+.analytics-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-primary, #ffffff);
+  color: var(--text-primary, #333333);
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.analytics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color, #eaeaea);
+  position: sticky;
+  top: 0;
+  background-color: var(--bg-primary, #ffffff);
+  z-index: 10;
+}
+
+.analytics-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.analytics-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.analytics-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.analytics-btn:hover {
+  background-color: var(--hover-bg, #f5f5f5);
+  color: var(--text-primary, #333);
+}
+
+.analytics-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.analytics-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.analytics-row {
+  display: flex;
+  gap: 12px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.analytics-card {
+  background-color: var(--bg-secondary, #f9f9f9);
+  border: 1px solid var(--border-color, #eaeaea);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.analytics-card-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-secondary, #666);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.analytics-metric {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.analytics-sub {
+  font-size: 11px;
+  color: var(--text-secondary, #666);
+}
+
+/* Progress bar */
+.analytics-progress-container {
+  height: 8px;
+  background-color: var(--border-color, #eaeaea);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.analytics-progress-bar {
+  height: 100%;
+  background-color: var(--accent-color, #3b82f6);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.analytics-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-secondary, #666);
+}
+
+/* Lists */
+.analytics-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.analytics-list-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color, #eaeaea);
+}
+
+.analytics-list-item:last-child {
+  border-bottom: none;
+}
+
+.analytics-favicon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border-radius: 2px;
+}
+
+.analytics-list-name {
+  flex: 1;
+  font-size: 12px;
+}
+
+.analytics-list-name.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.analytics-list-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+}
+
+.analytics-empty {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* Specific to popup adjustments if needed */
+.analytics-container.is-popup {
+  padding-bottom: 16px;
+}
+
+/* Dark mode support (assuming variables exist, otherwise fallback handles it) */
+@media (prefers-color-scheme: dark) {
+  .analytics-container {
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --border-color: #444444;
+    --hover-bg: #3d3d3d;
+  }
+}
