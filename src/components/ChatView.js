@@ -299,12 +299,16 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
       let introMsg = '';
       if (tab) {
         introMsg = `I've read **${targetTitle}**. What would you like to know?`;
+        setMessages([{ role: 'assistant', content: introMsg }]);
       } else {
-        const titleList = response.tabs ? response.tabs.map(t => `- ${t.title}`).join('\n') : '';
-        introMsg = `I've read **${response.count} tabs** in **${targetTitle}**:\n\n${titleList}\n\nAsk me about them!`;
+        introMsg = `I've read **${response.count} tabs** in **${targetTitle}**. Ask me about them!`;
+        setMessages([{ 
+          role: 'assistant', 
+          content: introMsg,
+          isContextIntro: true,
+          tabs: response.tabs 
+        }]);
       }
-
-      setMessages([{ role: 'assistant', content: introMsg }]);
       setStatus('ready');
     } else {
       setStatus('error');
@@ -327,7 +331,9 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
         }
         return [...prev, {
           role: 'assistant',
-          content: `Context updated with **${response.count} tabs** from **${targetTitle}**.`
+          content: `Context updated with **${response.count} tabs** from **${targetTitle}**.`,
+          isContextIntro: true,
+          tabs: response.tabs
         }];
       });
       setStatus('ready');
@@ -820,6 +826,20 @@ const ChatView = ({ tab, group, onBack, isSidebar = false, onRefresh }) => {
                   </ReactMarkdown>
                 );
               })()}
+              {m.isContextIntro && m.tabs && m.tabs.length > 0 && (
+                <details className="context-intro-details" style={{ marginTop: '8px' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9em', opacity: 0.9 }}>
+                    View referenced tabs ({m.tabs.length})
+                  </summary>
+                  <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: '0.85em', opacity: 0.8, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {m.tabs.map((t, idx) => (
+                      <li key={idx} className="truncate" title={t.title} style={{ listStyleType: 'disc' }}>
+                        {t.title}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
             {m.role === 'assistant' && (
               <div className={messageActionsClass}>

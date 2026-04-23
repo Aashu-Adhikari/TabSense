@@ -9,13 +9,25 @@ const PRESETS = {
     provider: 'openrouter',
     baseUrl: 'https://openrouter.ai/api/v1',
     model: '',
-    label: 'OpenRouter (Official)'
+    label: 'OpenRouter'
+  },
+  openrouter_free: {
+    provider: 'openrouter_free',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    model: 'openrouter/free',
+    label: 'OpenRouter (Free)'
+  },
+  deepseek: {
+    provider: 'deepseek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    model: '',
+    label: 'DeepSeek'
   },
   openai: {
     provider: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-4o-mini',
-    label: 'OpenAI (Official)'
+    model: '',
+    label: 'OpenAI'
   },
   custom: {
     provider: 'custom',
@@ -67,6 +79,19 @@ const SettingsView = ({
   // Chat history settings
   const [chatRetentionHours, setChatRetentionHours] = useState(24);
 
+  // Initial values for dirty tracking
+  const [initialValues, setInitialValues] = useState({
+    provider: 'openrouter',
+    baseUrl: PRESETS.openrouter.baseUrl,
+    model: PRESETS.openrouter.model,
+    apiKey: '',
+    autoGroupingEnabled: true,
+    autoGroupingMethod: 'domain',
+    chatRetentionHours: 24,
+    defaultView: 'sidepanel',
+    uiSize: 'normal'
+  });
+
   // Determine which components to show
   const showLLMSettings = enabledComponents.includes(SETTING_COMPONENTS.LLM_API);
   const showAutoGrouping = enabledComponents.includes(SETTING_COMPONENTS.AUTO_GROUPING);
@@ -76,44 +101,81 @@ const SettingsView = ({
 
   // Load existing settings if editing
   useEffect(() => {
-    if (!isFirstSetup) {
-      if (showLLMSettings) {
-        chromeApi.getLLMConfig().then(res => {
+    const loadAllSettings = async () => {
+      const newInitial = { ...initialValues };
+      
+      if (!isFirstSetup) {
+        if (showLLMSettings) {
+          const res = await chromeApi.getLLMConfig();
           if (res.config) {
-            setProvider(res.config.provider || 'openrouter');
+            const p = res.config.provider || 'openrouter';
+            setProvider(p);
             setBaseUrl(res.config.baseUrl);
             setModel(res.config.model);
             setApiKey(res.config.apiKey);
+            
+            newInitial.provider = p;
+            newInitial.baseUrl = res.config.baseUrl;
+            newInitial.model = res.config.model;
+            newInitial.apiKey = res.config.apiKey;
           }
-        });
-      }
+        }
 
-      if (showAutoGrouping) {
-        // Load auto-grouping settings
-        chrome.storage.local.get(['auto_grouping_settings']).then(result => {
+        if (showAutoGrouping) {
+          const result = await chrome.storage.local.get(['auto_grouping_settings']);
           const settings = result.auto_grouping_settings || {};
           setAutoGroupingEnabled(settings.enabled || false);
           setAutoGroupingMethod(settings.method || 'domain');
-        });
-      }
+          
+          newInitial.autoGroupingEnabled = settings.enabled || false;
+          newInitial.autoGroupingMethod = settings.method || 'domain';
+        }
 
-      if (showChatHistory) {
-        // Load chat history settings
-        chrome.storage.local.get(['chat_history_settings']).then(result => {
+        if (showChatHistory) {
+          const result = await chrome.storage.local.get(['chat_history_settings']);
           const settings = result.chat_history_settings || {};
           setChatRetentionHours(settings.retentionHours || 24);
-        });
-      }
+          
+          newInitial.chatRetentionHours = settings.retentionHours || 24;
+        }
 
-      if (showUiPreferences) {
-        chrome.storage.local.get(['ui_preferences']).then(result => {
+        if (showUiPreferences) {
+          const result = await chrome.storage.local.get(['ui_preferences']);
           const settings = result.ui_preferences || {};
           setDefaultView(settings.defaultView || 'sidepanel');
           setUiSize(settings.uiSize || 'normal');
-        });
+          
+          newInitial.defaultView = settings.defaultView || 'sidepanel';
+          newInitial.uiSize = settings.uiSize || 'normal';
+        }
+        
+        setInitialValues(newInitial);
       }
-    }
+    };
+
+    loadAllSettings();
   }, [isFirstSetup, showLLMSettings, showAutoGrouping, showChatHistory, showUiPreferences]);
+
+  const isChanged = () => {
+    if (showLLMSettings) {
+      if (provider !== initialValues.provider) return true;
+      if (baseUrl !== initialValues.baseUrl) return true;
+      if (model !== initialValues.model) return true;
+      if (apiKey !== initialValues.apiKey) return true;
+    }
+    if (showAutoGrouping) {
+      if (autoGroupingEnabled !== initialValues.autoGroupingEnabled) return true;
+      if (autoGroupingMethod !== initialValues.autoGroupingMethod) return true;
+    }
+    if (showChatHistory) {
+      if (chatRetentionHours !== initialValues.chatRetentionHours) return true;
+    }
+    if (showUiPreferences) {
+      if (defaultView !== initialValues.defaultView) return true;
+      if (uiSize !== initialValues.uiSize) return true;
+    }
+    return false;
+  };
 
   const handleProviderChange = (newProvider) => {
     setProvider(newProvider);
@@ -125,6 +187,7 @@ const SettingsView = ({
 
   const handleSave = async () => {
     setLoading(true);
+    try {
 
     // Save LLM config only if API key is provided (for chat features) and component is enabled
     if (showLLMSettings && apiKey.trim()) {
@@ -149,21 +212,38 @@ const SettingsView = ({
       await chrome.storage.local.set({ chat_history_settings: chatHistorySettings });
     }
 
-    if (showUiPreferences) {
-      const uiPreferences = {
+      if (showUiPreferences) {
+        const uiPreferences = {
+          defaultView,
+          uiSize
+        };
+        await chrome.storage.local.set({ ui_preferences: uiPreferences });
+        try {
+          await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: defaultView === 'sidepanel' });
+        } catch (error) {
+          console.warn('Settings: Failed to update side panel behavior:', error);
+        }
+      }
+
+      // Update initial values after saving
+      setInitialValues({
+        provider,
+        baseUrl,
+        model,
+        apiKey,
+        autoGroupingEnabled,
+        autoGroupingMethod,
+        chatRetentionHours,
         defaultView,
         uiSize
-      };
-      await chrome.storage.local.set({ ui_preferences: uiPreferences });
-      try {
-        await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: defaultView === 'sidepanel' });
-      } catch (error) {
-        console.warn('Settings: Failed to update side panel behavior:', error);
-      }
-    }
+      });
 
-    setLoading(false);
-    onSaved();
+      setLoading(false);
+      onSaved();
+    } catch (error) {
+      console.error('Settings: Failed to save:', error);
+      setLoading(false);
+    }
   };
 
   const headerTitle = title || '⚙️ Settings';
@@ -189,32 +269,38 @@ const SettingsView = ({
               onChange={(e) => handleProviderChange(e.target.value)}
               className="settings-select"
             >
-              <option value="openrouter">OpenRouter (Official)</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="openrouter_free">OpenRouter (Free)</option>
+              <option value="deepseek">DeepSeek</option>
               <option value="openai">OpenAI</option>
               <option value="custom">Custom (Any Compatible API)</option>
             </select>
           </div>
 
-          <div className="form-group">
-            <label>Base URL</label>
-            <input 
-              type="text" 
-              value={baseUrl} 
-              onChange={(e) => setBaseUrl(e.target.value)}
-              disabled={provider !== 'custom'}
-              className="settings-input"
-            />
-          </div>
+          {provider !== 'openrouter_free' && (
+            <>
+              <div className="form-group">
+                <label>Base URL</label>
+                <input 
+                  type="text" 
+                  value={baseUrl} 
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  disabled={provider !== 'custom'}
+                  className="settings-input"
+                />
+              </div>
 
-          <div className="form-group">
-            <label>Model Name</label>
-            <input 
-              type="text" 
-              value={model} 
-              onChange={(e) => setModel(e.target.value)}
-              className="settings-input"
-            />
-          </div>
+              <div className="form-group">
+                <label>Model Name</label>
+                <input 
+                  type="text" 
+                  value={model} 
+                  onChange={(e) => setModel(e.target.value)}
+                  className="settings-input"
+                />
+              </div>
+            </>
+          )}
 
           <div className="form-group">
             <label>API Key</label>
@@ -225,14 +311,14 @@ const SettingsView = ({
               placeholder="sk-..."
               className="settings-input"
             />
-            {provider === 'openrouter' && (
+            {(provider === 'openrouter' || provider === 'openrouter_free') && (
               <p className="settings-hint">
                 Get a free API key at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai</a>
               </p>
             )}
           </div>
 
-          {provider === 'openrouter' && (
+          {(provider === 'openrouter' || provider === 'openrouter_free') && (
             <div className="free-tier-notice">
               {compact ? (
                 <>
@@ -376,6 +462,7 @@ const SettingsView = ({
           variant="primary"
           onClick={handleSave}
           loading={loading}
+          disabled={loading || !isChanged()}
           fullWidth={!onCancel}
           className={compact ? 'sidebar-btn sidebar-btn--primary' : ''}
         >

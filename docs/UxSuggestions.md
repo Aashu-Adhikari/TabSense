@@ -28,3 +28,28 @@ The current auto-grouping logic is powerful but could feel more "magical" and le
 | **Smart Truncation/Token Management** | Medium | High |
 > [!TIP]
 > I recommend starting with the **Configurable Grouping Delay** and **Stop Generation** features as they provide immediate UX wins with minimal code changes.
+
+## 5. Next-Gen User Experience Ideas (Phase 5+) 🚀
+These ideas focus on transforming TabSense from an organizer into an active, intelligent agent.
+
+### 🧹 Automated Decluttering & "Tab Bankruptcy" Prevention
+- **"Summarize & Close" Action**: A one-click button on a tab group to generate a comprehensive summary of all tabs, save it locally, and then close them.
+- **Stale Tab Interventions**: If tabs sit ungrouped or unread for 48 hours, proactively offer a notification: *"You have 8 old tabs about 'React Hooks'. Want me to extract the key takeaways and close them?"*
+- **Snooze / Read Later Queue**: Allow users to "Snooze" a tab. TabSense could pre-process the tab in the background so a summary is ready upon return.
+
+### 🧠 Agentic Workflows & Integrations
+- **Export to Workspace**: One-click "Export to Notion" or "Download as Markdown" to format chat, summaries, and citations for a second brain (Obsidian, Docs).
+- **Draft Generation**: Quick-action chips like *"Draft an email summarizing this group"* or *"Create a Jira ticket from this error log"*.
+- **Smart Tab Routing**: Rules like "Always open GitHub links in the 'Work' group" or automatically pausing/moving YouTube tabs to a "Distractions" group during work hours.
+
+### 🎯 Focus & Context Switching
+- **Workspaces / Context Modes**: Toggle between "Work Mode" and "Personal Mode" to temporarily hide/collapse entertainment or shopping groups.
+- **Focus Lock**: Select a "Deep Work" group and click *Focus*. The extension blocks or warns if a "Social Media" or "Shopping" tab is opened.
+
+### 🔍 Supercharged Search & Discovery
+- **Command Palette (Cmd/Ctrl + Shift + K)**: A Spotlight-like search bar that pops up over any webpage. Users can search for a specific phrase they remember reading, and TabSense instantly finds the open tab containing it.
+- **Visual Tab Map**: Use ML embeddings to plot tabs on a 2D visual map. Clusters show how current research is grouped and help spot outlier tabs.
+
+### 🛡️ Privacy & Customization
+- **Domain Blocklists**: A "Do Not Track" setting to specify domains (e.g., banks, email) that TabSense's scraper and ML classifier will completely ignore.
+- **Custom AI Personas**: Let users tweak the system prompt (e.g., "Code Reviewer" vs "ELI5" for complex topics).

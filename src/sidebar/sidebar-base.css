@@ -628,6 +628,12 @@ body {
   border: 1px solid #d1d5db;
   background: #f3f4f6;
   color: #111827;
+  cursor: pointer;
+}
+
+.sidebar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .sidebar-btn--primary {
@@ -797,5 +803,12 @@ body {
   .sidebar-container .sidebar-btn--primary:hover {
     background: #232a31;
     border-color: #3a424b;
+  }
+
+  .sidebar-container .sidebar-btn:disabled {
+    background: #14161a;
+    color: #6b7280;
+    border-color: #252a2f;
+    opacity: 0.5;
   }
 }
