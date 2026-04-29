@@ -1,5 +1,6 @@
 // src/background/messageHandlers/chatHandlers.js
 import { llmService } from '../../services/llmService.js';
+import { encryptKey, decryptKey } from '../../utils/cryptoUtils.js';
 
 // =================================================================
 // ===== HELPER: WAIT FOR TAB LOAD =================================
@@ -220,22 +221,25 @@ export function handleSendChatMessage(request, sendResponse) {
 export function handleExtractTabContent(request, sendResponse) {
   const { tabId } = request;
 
-  chrome.tabs.get(tabId, (tab) => {
-    if (chrome.runtime.lastError || !tab) {
-      sendResponse({ success: false, error: "Tab not found" });
-      return;
-    }
+  ensureTabIsReady(tabId)
+    .then(async (tab) => {
+      if (!tab) {
+        sendResponse({ success: false, error: "Tab not found" });
+        return;
+      }
 
-    if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.includes('webstore')) {
-      sendResponse({ success: false, error: "System pages cannot be read." });
-      return;
-    }
+      // Re-verify URL after wake-up/load
+      if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.includes('webstore')) {
+        sendResponse({ success: false, error: "System pages cannot be read." });
+        return;
+      }
 
-    chrome.scripting.executeScript({
-      target: { tabId },
-      func: getPageContent,
-    })
-      .then(results => {
+      try {
+        const results = await chrome.scripting.executeScript({
+          target: { tabId },
+          func: getPageContent,
+        });
+
         if (!results || !results[0]) {
           sendResponse({ success: false, error: "Script injection failed" });
           return;
@@ -248,11 +252,15 @@ export function handleExtractTabContent(request, sendResponse) {
         } else {
           sendResponse({ success: true, content });
         }
-      })
-      .catch(err => {
-        sendResponse({ success: false, error: "Cannot access page (Security Restriction)" });
-      });
-  });
+      } catch (err) {
+        console.warn(`Failed to scrape tab ${tabId}:`, err);
+        sendResponse({ success: false, error: "Cannot access page (Security Restriction or Loading Error)" });
+      }
+    })
+    .catch(err => {
+      console.error('Error ensuring tab readiness:', err);
+      sendResponse({ success: false, error: "Tab not ready or not found" });
+    });
 
   return true;
 }
@@ -288,13 +296,21 @@ export function handleChatStreamConnection(port) {
 }
 
 export function handleSaveLLMConfig(request, sendResponse) {
-  chrome.storage.local.set({ llm_settings: request.config }, () => sendResponse({ success: true }));
+  const configToSave = { ...request.config };
+  if (configToSave.apiKey) {
+    configToSave.apiKey = encryptKey(configToSave.apiKey);
+  }
+  chrome.storage.local.set({ llm_settings: configToSave }, () => sendResponse({ success: true }));
   return true;
 }
 
 export function handleGetLLMConfig(request, sendResponse) {
   chrome.storage.local.get(['llm_settings'], (res) => {
-    sendResponse({ success: true, config: res.llm_settings || null });
+    const config = res.llm_settings || null;
+    if (config && config.apiKey) {
+      config.apiKey = decryptKey(config.apiKey);
+    }
+    sendResponse({ success: true, config });
   });
   return true;
 }

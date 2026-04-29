@@ -1,6 +1,6 @@
 {
   "name": "tabsynth",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "AI-powered tab manager",
   "scripts": {
     "build": "webpack --mode=production",

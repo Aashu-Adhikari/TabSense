@@ -1,10 +1,10 @@
 # TabSense - AI-Powered Tab Manager
 
-**Version:** 1.1.1 | **Manifest:** V3 | **Platform:** Chrome Extension
+**Version:** 1.3.0 | **Manifest:** V3 | **Platform:** Chrome Extension
 
 An intelligent Chrome extension that uses AI to automatically organize and manage your browser tabs. Features smart grouping, content analysis, and conversational AI for enhanced productivity.
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue)
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
 ![Manifest](https://img.shields.io/badge/manifest-v3-green)
 ![React](https://img.shields.io/badge/react-18.2-blue)
 ![TensorFlow](https://img.shields.io/badge/tensorflow.js-3.21-orange)
@@ -274,6 +274,15 @@ npm run build
 ---
 
 ## 📝 Changelog
+
+### v1.3.0 (April 2026)
+- 📊 Advanced Analytics Dashboard (time tracking, memory estimation, focus score, historical trends)
+- 🪦 Stale Tabs "Graveyard" with 1-click clear all
+- 🔧 LLM provider updates: DeepSeek, OpenRouter (Free) added
+- ✨ Smart "Save Configuration" button (disabled until settings change)
+- 🖼️ Favicon fallback for broken group icons
+- ❌ Close button for ungrouped tabs
+- 📜 Scrollable popup analytics view
 
 ### v1.1.1 (March 2026)
 - ✅ Added undo/redo buttons to header toolbar

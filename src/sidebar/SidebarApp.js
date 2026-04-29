@@ -352,7 +352,15 @@ function SidebarApp() {
       </div>
       <div
         className={`activity-bar-item ${activeView === 'chat' ? 'active' : ''}`}
-        onClick={() => setActiveView('chat')}
+        onClick={() => {
+          // If we're already in chat view, clicking again resets to "active tab" chat
+          if (activeView === 'chat') {
+            setActiveChatTab(null);
+            setActiveChatGroup(null);
+          } else {
+            setActiveView('chat');
+          }
+        }}
         title="Chat"
       >
         <div className="activity-bar-icon">
@@ -475,6 +483,7 @@ function SidebarApp() {
                     variant="primary"
                     fullWidth
                     onClick={() => {
+                      setActiveChatGroup(null); // Clear specific group chat
                       setActiveChatTab(currentTab);
                       setActiveView('chat');
                     }}
@@ -579,6 +588,7 @@ function SidebarApp() {
                           onStartRename={handleStartRename}
                           onOpenTab={handleOpenTab}
                           onChatWithGroup={(targetGroup) => {
+                            setActiveChatTab(null); // Clear specific tab chat
                             setActiveChatGroup(targetGroup);
                             setActiveView('chat');
                           }}
@@ -645,12 +655,24 @@ function SidebarApp() {
                           className="sidebar-action-btn"
                           onClick={(e) => {
                             e.stopPropagation();
+                            setActiveChatGroup(null); // Clear specific group chat
                             setActiveChatTab(tab);
                             setActiveView('chat');
                           }}
                           title="Chat"
                         >
                           <IconChat className="sidebar-icon sidebar-icon--small" />
+                        </button>
+                        <button
+                          className="sidebar-action-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            chrome.tabs.remove(tab.id, () => fetchGroupsAndTabs());
+                          }}
+                          title="Close tab"
+                          style={{ color: '#ef4444' }}
+                        >
+                          ✕
                         </button>
                       </div>
                     </div>

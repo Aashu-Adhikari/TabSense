@@ -651,6 +651,16 @@ function App() {
                         {mlCategories.map(c => <option key={c.label} value={`ml_category--${c.label}`}>{c.emoji} {c.label}</option>)}
                       </optgroup>
                     </select>
+                    <button
+                      className="ungroup-single-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        chrome.tabs.remove(tab.id, () => fetchGroupsAndTabs());
+                      }}
+                      title="Close tab"
+                    >
+                      ✕
+                    </button>
                   </div>
                 </div>
               ))}

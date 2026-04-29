@@ -1,4 +1,5 @@
 // src/services/llmService.js
+import { decryptKey } from '../utils/cryptoUtils.js';
 
 export const DEFAULT_MODEL = {
   provider: 'openrouter',
@@ -11,7 +12,11 @@ class LLMService {
   // Helper to get the full configuration object
   async getConfig() {
     const result = await chrome.storage.local.get(['llm_settings']);
-    return { ...DEFAULT_MODEL, ...result.llm_settings };
+    const config = { ...DEFAULT_MODEL, ...result.llm_settings };
+    if (config.apiKey) {
+      config.apiKey = decryptKey(config.apiKey);
+    }
+    return config;
   }
 
   async validateKey(apiKey) {
