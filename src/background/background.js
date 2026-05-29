@@ -12,6 +12,7 @@ import * as chatHandlers from './messageHandlers/chatHandlers.js';
 import * as analyticsHandlers from './messageHandlers/analyticsHandlers.js';
 import { emojiService } from '../services/emojiService.js';
 import { timeTracker } from './utils/timeTracker.js';
+import { staleTabMonitor } from './utils/staleTabMonitor.js';
 
 // =================================================================
 // ===== PROACTIVE CACHING FOR INSTANT POPUP UI ====================
@@ -259,6 +260,7 @@ chrome.runtime.onStartup.addListener(async () => {
   await setTimersForInactiveUngroupedTabs();
   await purgeOldChatHistories();
   await timeTracker.initialize();
+  chrome.alarms.create("staleTabCheck", { periodInMinutes: 60 });
 });
 chrome.runtime.onInstalled.addListener(async () => {
   await applyPanelBehaviorFromSettings();
@@ -266,6 +268,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   await setTimersForInactiveUngroupedTabs();
   await purgeOldChatHistories();
   await timeTracker.initialize();
+  chrome.alarms.create("staleTabCheck", { periodInMinutes: 60 });
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -520,4 +523,15 @@ chrome.runtime.onConnect.addListener((port) => {
   if (port.name === 'chat_stream') {
     chatHandlers.handleChatStreamConnection(port);
   }
+});
+
+// ===== ALARMS AND NOTIFICATIONS =================================
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'staleTabCheck') {
+    staleTabMonitor.checkForStaleTabs();
+  }
+});
+
+chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
+  staleTabMonitor.handleNotificationAction(notificationId, buttonIndex);
 });
